@@ -18,7 +18,8 @@ class PageOne(wx.Panel):
         wx.Panel.__init__(self, parent)
         self.dirname='C:\Python27\ENGG4810'
         
-
+        self.inputsounds = [None] * 5 #'pure' sounds imported by user
+        self.outputsounds = [None] * 5 #'filtered' sounds that user creates
         self.panels = []
         self.figures = []
         self.canvs = []
@@ -142,6 +143,9 @@ class PageOne(wx.Panel):
             sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
             id = (e.GetId())%10
             #now we have the sound file!!
+            #add it to our 'pure' sound collection
+            self.inputsounds[id] = sound            
+            self.outputsounds[id] = sound #WARNING TODO this must be removed after implementing effects
             self.axes = self.figures[id].add_subplot(111)
             #clear axes first
             self.axes.cla()
@@ -170,7 +174,7 @@ class PageOne(wx.Panel):
     def OnExportSD(self, e):
         return
 
-   def OnUndo(self, e):
+    def OnUndo(self, e):
         return
 
 
