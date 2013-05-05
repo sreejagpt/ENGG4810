@@ -16,7 +16,7 @@ class PageOne(wx.Panel):
     #Effects screen
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        self.dirname=''
+        self.dirname='C:\Python27\ENGG4810'
         
 
         self.panels = []
@@ -87,19 +87,19 @@ class PageOne(wx.Panel):
             #create export button
             exbtn = wx.Button(self.buttonPanels[i], id = 60 + i, 
                                         label='Export (USB)', size=(80,25))
-            exbtn.Bind(wx.EVT_BUTTON, self.OnDelay)
+            exbtn.Bind(wx.EVT_BUTTON, self.OnExportUSB)
             self.exButtons.append(exbtn)
 
             #create export via SD button
             ex2btn = wx.Button(self.buttonPanels[i], id = 70 + i,
                                         label='Export (SD)', size=(80,25))
-            ex2btn.Bind(wx.EVT_BUTTON, self.OnDelay)
+            ex2btn.Bind(wx.EVT_BUTTON, self.OnExportSD)
             self.exButtons_SD.append(ex2btn)
 
             #create undo button
             ubtn = wx.Button(self.buttonPanels[i], id = 80 + i,
                                         label='Undo', size=(80,25))
-            ubtn.Bind(wx.EVT_BUTTON, self.OnDelay)
+            ubtn.Bind(wx.EVT_BUTTON, self.OnUndo)
             self.uButtons.append(ubtn)
 
             #create button Sizer
@@ -164,6 +164,15 @@ class PageOne(wx.Panel):
     def OnDelay(self, e):
         return
 
+    def OnExportUSB(self, e):
+        return
+
+    def OnExportSD(self, e):
+        return
+
+   def OnUndo(self, e):
+        return
+
 
 class MainFrame(wx.Frame):
     def __init__(self):
@@ -181,7 +190,7 @@ class MainFrame(wx.Frame):
         # add the pages to the notebook with the label to show on the tab
         nb.AddPage(page1, "Effects")
         nb.AddPage(page2, "Configuration")
-        #nb.AddPage(page3, "About")
+        #nb.AddPage(page3, "Help") #Maybe USB MIDI goes in this tab TODO
         
         # finally, put the notebook in a sizer for the panel to manage
         # the layout
