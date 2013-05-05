@@ -4,7 +4,7 @@ import wx
 import wx.lib.plot as plot
 import time
 
-
+from wx.lib.pubsub import Publisher
 
 class PageTwo(wx.Panel):
     
@@ -12,7 +12,10 @@ class PageTwo(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         #leftmost panel and middle panel are identical
-        self.st = '' 
+        self.st = ''
+        self.buttonassignments = [(None, None)]*16
+
+        Publisher().subscribe(self.UpdateButtonAssignments, ("update.assignments"))
         
         #masterVSizer is the true master
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
@@ -36,7 +39,7 @@ class PageTwo(wx.Panel):
         self.btnPanel = wx.Panel(self.panel)
         for i in range(0, 16):
             #create 16 buttons and display them
-            btn = wx.Button(self.btnPanel, label=str(i+1), size=(120,80))
+            btn = wx.Button(self.btnPanel, label=str(i+1), id = i, size=(120,80))
             btn.Bind(wx.EVT_BUTTON, self.OnButtonPress)
             btn.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
             #btn.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
@@ -48,17 +51,26 @@ class PageTwo(wx.Panel):
 
 
         self.panel.SetSizerAndFit(self.masterHSizer)
-       
+
+    def updateAssignments(self, msg):
+        self.buttonassignments = msg.data
+
     def OnButtonPress(self, e):
         button = e.GetEventObject()
-        "You pressed " +str(button.GetLabel())
         self.panel.Refresh()
 
+    def UpdateButtonAssignments(self, msg):
+        
+        self.buttonassignments = msg.data
 
     def onMouseOver(self, event):
         # mouseover changes text on button
         button = event.GetEventObject()
-        self.txt.SetLabel('Track information here for button '+str(button.GetLabel()))
+        self.txt.SetLabel('Hover over button to view filename\nassigned to it')
+        buttonid = event.GetId()
+        if self.buttonassignments[buttonid][1] != None:
+            self.txt.SetLabel("Button "+str(buttonid + 1)+" stores file "+self.buttonassignments[buttonid][1]\
+                +"\n Click on button to play the file.")
         time.sleep(0.05)
         event.Skip()
         

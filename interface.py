@@ -18,9 +18,13 @@ class PageOne(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.dirname='C:\Python27\ENGG4810'
+
+        self.currentid = -1
         self.frame = parent
         self.inputsounds = [None] * 5 #'pure' sounds imported by user
         self.outputsounds = [None] * 5 #'filtered' sounds that user creates
+        self.buttonassignments = [(None, None)] * 16 #which button is assigned to what?
+        self.inputfilenames = [None] * 5
         self.panels = []
         self.figures = []
         self.canvs = []
@@ -35,7 +39,7 @@ class PageOne(wx.Panel):
         self.buttonPanels = []
         self.sliders = []
 
-        #Publisher().subscribe(self.showFrame, ("show.mainframe"))
+        Publisher().subscribe(self.showFrame, ("show.mainframe"))
 
         #master VSizer:
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
@@ -146,7 +150,8 @@ class PageOne(wx.Panel):
             id = (e.GetId())%10
             #now we have the sound file!!
             #add it to our 'pure' sound collection
-            self.inputsounds[id] = sound            
+            self.inputsounds[id] = sound
+            self.inputfilenames[id] = self.filename            
             self.outputsounds[id] = sound #WARNING TODO this must be removed after implementing effects
             self.axes = self.figures[id].add_subplot(111)
             #clear axes first
@@ -164,7 +169,14 @@ class PageOne(wx.Panel):
             
         dlg.Destroy()
 
-    def showFrame(self):
+    def showFrame(self, msg):
+        self.buttonpressed = msg.data
+        #Assigning sound to keypad key
+        if msg.data != -1:
+            sound = self.inputsounds[self.currentid]
+            filename = self.inputfilenames[self.currentid]
+            self.buttonassignments[msg.data] = (sound, filename)
+            Publisher().sendMessage(("update.assignments"), self.buttonassignments)
         frame = self.GetParent()
         frame.Show()
 
@@ -175,12 +187,14 @@ class PageOne(wx.Panel):
         return
 
     def OnExportUSB(self, e):
-        #self.frame.Hide()
+        #get button id
+        self.currentid = (e.GetId())%60
         self.new_frame = ba.ButtonAssignment()
         self.new_frame.Show()
 
     def OnExportSD(self, e):
-        #self.frame.Hide()
+        #get button id
+        self.currentid = (e.GetId())%70
         self.new_frame = ba.ButtonAssignment()
         self.new_frame.Show()
 
@@ -216,10 +230,8 @@ class MainFrame(wx.Frame):
 
 
 
-
-
-
 if __name__ == "__main__":
     app = wx.App()
     MainFrame().Show()
     app.MainLoop()
+##################################################################################################

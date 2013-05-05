@@ -6,6 +6,7 @@ class ButtonAssignment(wx.Frame):
     specific sounds to buttons """
     def __init__(self):
         """Constructor"""
+        self.id = -1
         wx.Frame.__init__(self, None, title = "Choose Button", style=wx.SYSTEM_MENU)
         self.vertsizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = wx.Panel(self)
@@ -41,12 +42,14 @@ class ButtonAssignment(wx.Frame):
     def OnButtonPress(self, e):
         #update self.selection label and store value to self.buttonchoice
         self.id = e.GetId()
-        self.selection.SetLabel("Your selection: Button "+str(self.id))
+        self.selection.SetLabel("Your selection: Button "+str((self.id) + 1))
         return
 
     def OnOK(self, e):
         #Complete export and hide this frame
-        #Do export
-        #Publisher().sendMessage(("show.mainframe"), 'Closing now')
+        #Do export here TODO
+        #msg stores button clicked
+        #msg is -1 if no button clicked
+        Publisher().sendMessage(("show.mainframe"), self.id)
         self.Close()
 
