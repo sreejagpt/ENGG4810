@@ -1,23 +1,23 @@
-'''
-Interface for TP2 code
-'''
-import matplotlib
+''' Interface for TP2 code '''
+import matplotlib 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.figure import Figure
-import wx
-import wx.lib.plot as plt
-import interface_config_page as pg2
-import read_wav as wav
+from matplotlib.figure import Figure 
+import wx 
+from wx.lib.pubsub import Publisher 
+import wx.lib.plot as plt 
+import interface_config_page as pg2 
+import read_wav as wav 
 import sys
 
 import wave
+
 
 class PageOne(wx.Panel):
     #Effects screen
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.dirname='C:\Python27\ENGG4810'
-        
+        self.frame = parent
         self.inputsounds = [None] * 5 #'pure' sounds imported by user
         self.outputsounds = [None] * 5 #'filtered' sounds that user creates
         self.panels = []
@@ -34,6 +34,7 @@ class PageOne(wx.Panel):
         self.buttonPanels = []
         self.sliders = []
 
+        #Publisher().subscribe(self.showFrame, ("show.mainframe"))
 
         #master VSizer:
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
@@ -162,6 +163,10 @@ class PageOne(wx.Panel):
             
         dlg.Destroy()
 
+    def showFrame(self):
+        frame = self.GetParent()
+        frame.Show()
+
     def OnEcho(self, e):
         return
     
@@ -169,10 +174,14 @@ class PageOne(wx.Panel):
         return
 
     def OnExportUSB(self, e):
-        return
+        #self.frame.Hide()
+        self.new_frame = ButtonAssignment()
+        self.new_frame.Show()
 
     def OnExportSD(self, e):
-        return
+        #self.frame.Hide()
+        self.new_frame = ButtonAssignment()
+        self.new_frame.Show()
 
     def OnUndo(self, e):
         return
@@ -203,6 +212,59 @@ class MainFrame(wx.Frame):
         p.SetSizer(sizer)
         self.Maximize()
         self.Center()
+
+
+
+class ButtonAssignment(wx.Frame):
+    """ This class defines a little popup window that helps the user  assign
+    specific sounds to buttons """
+    def __init__(self):
+        """Constructor"""
+        wx.Frame.__init__(self, None, title = "Choose Button", style=wx.SYSTEM_MENU)
+        self.vertsizer = wx.BoxSizer(wx.VERTICAL)
+        self.panel = wx.Panel(self)
+
+        #Instruction label:
+        msg = "Click a button to assign file to:"
+        self.vertsizer.Add(wx.StaticText(self.panel, label=msg), 0, wx.ALIGN_CENTER, border = 50)
+
+        #Create 16 buttons:
+        self.buttonSizer = wx.GridSizer(4, 4, 1, 1)
+        self.btnPanel = wx.Panel(self.panel)
+        for i in range(0, 16):
+            #create 16 buttons and display them
+            btn = wx.Button(self.btnPanel, label=str(i+1), id = i, size=(120,80))
+            btn.Bind(wx.EVT_BUTTON, self.OnButtonPress)
+            self.buttonSizer.Add(btn, 0, wx.EXPAND)
+
+        self.btnPanel.SetSizerAndFit(self.buttonSizer)
+        self.vertsizer.Add(self.btnPanel, 0, wx.EXPAND|wx.ALL, border = 50)
+
+        #Your selection label
+        self.selection = wx.StaticText(self.panel, label="Your selection: <None>")
+        self.vertsizer.Add(self.selection, 0, wx.ALIGN_CENTER, border = 50)
+
+        self.okbutton = wx.Button(self.panel, label='OK', size=(80,25))
+        self.okbutton.Bind(wx.EVT_BUTTON, self.OnOK)
+        self.vertsizer.Add(self.okbutton, 0, wx.ALIGN_CENTER, border = 50)
+
+        self.panel.SetSizerAndFit(self.vertsizer)
+        self.SetSize((600, 550))
+        self.Center()
+
+    def OnButtonPress(self, e):
+        #update self.selection label and store value to self.buttonchoice
+        self.id = e.GetId()
+        self.selection.SetLabel("Your selection: Button "+str(self.id))
+        return
+
+    def OnOK(self, e):
+        #Complete export and hide this frame
+        #Do export
+        #Publisher().sendMessage(("show.mainframe"), 'Closing now')
+        self.Close()
+
+
 
 
 if __name__ == "__main__":
