@@ -143,7 +143,7 @@ class EffectsEditor(wx.Panel):
 
         #Tempo Label
         self.horizsizer.Add(wx.StaticText(self, label =
-                            "Tempo"), 0, wx.EXPAND| wx.ALL, border = 10)
+                            "Tempo (in bpm)"), 0, wx.EXPAND| wx.ALL, border = 10)
 
         #Tempo Text Area
         self.tempo_textctrl = wx.TextCtrl(self, -1)
