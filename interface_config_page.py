@@ -77,13 +77,6 @@ class PageTwo(wx.Panel):
     
         self.txt.SetLabel("Hover over a button to view information.\n Click on a button to play sound")
         event.Skip()
-    
-    def OnImport(self, e):
-        print 'test'
-
-    def OnExport(self, e):
-        print 'test'
-
 
 
 class EffectsEditor(wx.Panel):
@@ -91,7 +84,7 @@ class EffectsEditor(wx.Panel):
         wx.Panel.__init__(self, parent)
         #This class makes a panel that holds all the values
         #of effects that may be imported/exported
-        self.dirname='C:\Python27\ENGG4810'
+        
         self.loop_options = ['1', '1/2', '1/4', '1/8', '1/16', '1/32']
         #config file values
         self.vals = {'slot1': None, 'slot2': None, 'loop': None, 'tempo': None}
@@ -144,9 +137,14 @@ class EffectsEditor(wx.Panel):
         self.horizsizer.Add(self.tempo_textctrl, 0, wx.EXPAND| wx.ALL, border = 10)
 
 
-        #Import Button
-        self.importbutton = wx.Button(self, label='Import Configuration', size=(80,25))
-        self.importbutton.Bind(wx.EVT_BUTTON, self.OnImport)
+        #Import Button (via SD)
+        self.importbutton = wx.Button(self, label='Import Configuration (via SD)', size=(80,25))
+        self.importbutton.Bind(wx.EVT_BUTTON, self.OnImportSD)
+        self.horizsizer.Add(self.importbutton, 0, wx.EXPAND | wx.ALL, border = 10)
+
+        #Import Button (via USB)
+        self.importbutton = wx.Button(self, label='Import Configuration (via USB)', size=(80,25))
+        self.importbutton.Bind(wx.EVT_BUTTON, self.OnImportUSB)
         self.horizsizer.Add(self.importbutton, 0, wx.EXPAND | wx.ALL, border = 10)
 
         #Export Button
@@ -157,9 +155,10 @@ class EffectsEditor(wx.Panel):
         #Set Sizer to self
         self.SetSizerAndFit(self.horizsizer)
 
-    def OnImport(self, e):
+    def OnImportSD(self, e):
         #Read file from location
-        dlg = wx.FileDialog(self, "Choose a Config File", self.dirname, "", "*.*", wx.OPEN)
+        self.dirname='C:\Python27\ENGG4810' #TODO change this to SD card drive
+        dlg = wx.FileDialog(self, "Choose a Config File", self.dirname, "", "*.cfg", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
@@ -179,6 +178,10 @@ class EffectsEditor(wx.Panel):
             self.slot2_combobox.SetLabel(self.decode[self.vals['slot2']])
             self.loop_combobox.SetLabel(self.decode[self.vals['loop']])
             self.tempo_textctrl.SetLabel(self.vals['tempo'])
+
+    def OnImportUSB(self, e):
+        #TODO
+        return
 
     def OnExport(self, e):
         print 'test'
