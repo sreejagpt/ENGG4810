@@ -148,8 +148,13 @@ class EffectsEditor(wx.Panel):
         self.horizsizer.Add(self.importbutton, 0, wx.EXPAND | wx.ALL, border = 10)
 
         #Export Button
-        self.exportbutton = wx.Button(self, label='Export Configuration', size=(80,25))
-        self.exportbutton.Bind(wx.EVT_BUTTON, self.OnExport)
+        self.exportbutton = wx.Button(self, label='Export Configuration (via SD)', size=(80,25))
+        self.exportbutton.Bind(wx.EVT_BUTTON, self.OnExportSD)
+        self.horizsizer.Add(self.exportbutton, 0, wx.EXPAND|wx.ALL, border = 10)
+
+        #Export Button
+        self.exportbutton = wx.Button(self, label='Export Configuration (via USB)', size=(80,25))
+        self.exportbutton.Bind(wx.EVT_BUTTON, self.OnExportUSB)
         self.horizsizer.Add(self.exportbutton, 0, wx.EXPAND|wx.ALL, border = 10)
 
         #Set Sizer to self
@@ -180,10 +185,16 @@ class EffectsEditor(wx.Panel):
             self.tempo_textctrl.SetLabel(self.vals['tempo'])
 
     def OnImportUSB(self, e):
-        #TODO
+        return #TODO
+    
+    def OnExportSD(self, e):
+        #read each widget in effects editor
+        #get corresponding key from self.decode
+        #create a file where each line is key and value from self.vals
+        #prompt user to save file
         return
 
-    def OnExport(self, e):
+    def OnExportUSB(self, e):
         print 'test'
 
     def OnSelect(self, e):
