@@ -12,7 +12,6 @@ class PageTwo(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         #leftmost panel and middle panel are identical
-        self.st = ''
         self.buttonassignments = [(None, None)]*16
 
         Publisher().subscribe(self.UpdateButtonAssignments, ("update.assignments"))
@@ -85,22 +84,20 @@ class PageTwo(wx.Panel):
     def OnExport(self, e):
         print 'test'
 
-        
-    def OnSelect(self, e):
-    
-        i = e.GetString()
-        self.st.SetLabel(i)
-
 
 
 class EffectsEditor(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        self.st = ''
         #This class makes a panel that holds all the values
         #of effects that may be imported/exported
-
+        self.dirname='C:\Python27\ENGG4810'
         self.loop_options = ['1', '1/2', '1/4', '1/8', '1/16', '1/32']
+        #config file values
+        self.vals = {'slot1': None, 'slot2': None, 'loop': None, 'tempo': None}
+        self.decode = {'lpf': '2nd Order Lowpass', 'hpf': '2nd Order High Pass', 'bpf': '2nd Order Bandpass',
+        'nf': '2nd Order Notch Filter', 'delay': 'Delay', 'echo': 'Echo', 'dcb': 'Decimator/Bitcrusher',
+        'bko': 'Bitwise KO', '1': '1', '2': '1/2', '4': '1/4', '6':'1/6', '8':'1/8', '16':'1/16', '32':'1/32'}
         self.effect_options = ['2nd Order Lowpass', '2nd Order High Pass', '2nd Order Bandpass',
             '2nd Order Notch Filter', 'Delay', 'Echo', 'Decimator/Bitcrusher', 'Bitwise KO']
 
@@ -114,7 +111,7 @@ class EffectsEditor(wx.Panel):
 
         #Drop Down Box
         self.slot1_combobox = wx.ComboBox(self, choices=self.effect_options,
-            style=wx.CB_READONLY)
+            style=wx.CB_DROPDOWN)
         self.slot1_combobox.Bind(wx.EVT_COMBOBOX, self.OnSelect)
         self.horizsizer.Add(self.slot1_combobox, 0, wx.EXPAND| wx.ALL, border = 10)
 
@@ -124,7 +121,7 @@ class EffectsEditor(wx.Panel):
 
         #Drop Down Box
         self.slot2_combobox = wx.ComboBox(self, choices=self.effect_options,
-            style=wx.CB_READONLY)
+            style=wx.CB_DROPDOWN)
         self.slot2_combobox.Bind(wx.EVT_COMBOBOX, self.OnSelect)
         self.horizsizer.Add(self.slot2_combobox, 0, wx.EXPAND| wx.ALL, border = 10)
 
@@ -134,7 +131,7 @@ class EffectsEditor(wx.Panel):
 
         #Loop Drop Down Box
         self.loop_combobox = wx.ComboBox(self, choices=self.loop_options, 
-            style=wx.CB_READONLY)
+            style=wx.CB_DROPDOWN)
         self.loop_combobox.Bind(wx.EVT_COMBOBOX, self.OnSelect)
         self.horizsizer.Add(self.loop_combobox, 0, wx.EXPAND| wx.ALL, border = 10)
 
@@ -161,13 +158,33 @@ class EffectsEditor(wx.Panel):
         self.SetSizerAndFit(self.horizsizer)
 
     def OnImport(self, e):
-        print 'test'
+        #Read file from location
+        dlg = wx.FileDialog(self, "Choose a Config File", self.dirname, "", "*.*", wx.OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.filename = dlg.GetFilename()
+            self.dirname = dlg.GetDirectory()
+            self.file=open(self.dirname+"\\"+self.filename, 'r')
+            #Go through file line by line and parse it
+            for line in self.file:
+                strip = line.split(' ', 1)
+
+                try:
+                    self.vals[strip[0].strip()] = strip[1].strip()
+                except KeyError:
+                    pass
+            #we now have our config file parsed in
+            
+            #Reset working values by setting the fields to them
+            self.slot1_combobox.SetLabel(self.decode[self.vals['slot1']])
+            self.slot2_combobox.SetLabel(self.decode[self.vals['slot2']])
+            self.loop_combobox.SetLabel(self.decode[self.vals['loop']])
+            self.tempo_textctrl.SetLabel(self.vals['tempo'])
 
     def OnExport(self, e):
         print 'test'
 
     def OnSelect(self, e):
         i = e.GetString()
-        self.e.GetEventObject().SetLabel(i)
+        e.GetEventObject().SetLabel(i)
         
 

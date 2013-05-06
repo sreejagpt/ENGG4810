@@ -62,7 +62,7 @@ class ButtonAssignment(wx.Frame):
     def OnSelect(self, e):
         i = e.GetString()
         self.currentmode = i
-        self.holdlatch_combobox.SetLabel(i)
+        e.GetEventObject().SetLabel(i)
 
     def OnOK(self, e):
         #Complete export and hide this frame
