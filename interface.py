@@ -12,7 +12,6 @@ import sys
 import wave
 import button_assignment as ba
 
-
 class PageOne(wx.Panel):
     #Effects screen
     def __init__(self, parent):
@@ -20,6 +19,7 @@ class PageOne(wx.Panel):
         self.dirname='C:\Python27\ENGG4810'
 
         self.currentid = -1
+        self.holdlatchmode = 'hold'
         self.frame = parent
         self.inputsounds = [None] * 5 #'pure' sounds imported by user
         self.outputsounds = [None] * 5 #'filtered' sounds that user creates
@@ -170,12 +170,13 @@ class PageOne(wx.Panel):
         dlg.Destroy()
 
     def showFrame(self, msg):
-        self.buttonpressed = msg.data
+        self.buttonpressed = msg.data[0]
+        self.holdlatchmode = msg.data[1]
         #Assigning sound to keypad key
-        if msg.data != -1:
+        if self.buttonpressed != -1:
             sound = self.inputsounds[self.currentid]
             filename = self.inputfilenames[self.currentid]
-            self.buttonassignments[msg.data] = (sound, filename)
+            self.buttonassignments[self.buttonpressed] = (self.holdlatchmode, filename)
             Publisher().sendMessage(("update.assignments"), self.buttonassignments)
         frame = self.GetParent()
         frame.Show()

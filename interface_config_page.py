@@ -52,16 +52,14 @@ class PageTwo(wx.Panel):
 
         self.panel.SetSizerAndFit(self.masterHSizer)
 
-    def updateAssignments(self, msg):
-        self.buttonassignments = msg.data
 
     def OnButtonPress(self, e):
         button = e.GetEventObject()
         self.panel.Refresh()
 
     def UpdateButtonAssignments(self, msg):
-        
         self.buttonassignments = msg.data
+        print "Just received ", self.buttonassignments
 
     def onMouseOver(self, event):
         # mouseover changes text on button
@@ -70,7 +68,7 @@ class PageTwo(wx.Panel):
         buttonid = event.GetId()
         if self.buttonassignments[buttonid][1] != None:
             self.txt.SetLabel("Button "+str(buttonid + 1)+" stores file "+self.buttonassignments[buttonid][1]\
-                +"\n Click on button to play the file.")
+                +"\nMode: "+self.buttonassignments[buttonid][0]+"\nClick on button to play the file.")
         time.sleep(0.05)
         event.Skip()
         
@@ -104,8 +102,7 @@ class EffectsEditor(wx.Panel):
 
         self.loop_options = ['1', '1/2', '1/4', '1/8', '1/16', '1/32']
         self.effect_options = ['2nd Order Lowpass', '2nd Order High Pass', '2nd Order Bandpass',
-            '2nd Order Notch Filter', 'Delay', 'Echo', 'Decimator', 'Bitcrusher', 'Bitwise KO']
-        self.holdlatch_options = ['hold', 'latch']
+            '2nd Order Notch Filter', 'Delay', 'Echo', 'Decimator/Bitcrusher', 'Bitwise KO']
 
         self.horizsizer = wx.BoxSizer(wx.VERTICAL)
         #Effects Editor Label
@@ -149,15 +146,6 @@ class EffectsEditor(wx.Panel):
         self.tempo_textctrl = wx.TextCtrl(self, -1)
         self.horizsizer.Add(self.tempo_textctrl, 0, wx.EXPAND| wx.ALL, border = 10)
 
-        #Hold/Latch Label
-        self.horizsizer.Add(wx.StaticText(self, label =
-                            "Hold/Latch Mode"), 0, wx.EXPAND| wx.ALL, border = 10)
-
-        #Hold/Latch Drop Down Box
-        self.holdlatch_combobox = wx.ComboBox(self, choices=self.holdlatch_options, 
-            style=wx.CB_READONLY)
-        self.holdlatch_combobox.Bind(wx.EVT_COMBOBOX, self.OnSelect)
-        self.horizsizer.Add(self.holdlatch_combobox, 0, wx.EXPAND| wx.ALL, border = 10)
 
         #Import Button
         self.importbutton = wx.Button(self, label='Import Configuration', size=(80,25))
@@ -178,8 +166,8 @@ class EffectsEditor(wx.Panel):
     def OnExport(self, e):
         print 'test'
 
-        
     def OnSelect(self, e):
-    
         i = e.GetString()
-        self.st.SetLabel(i)
+        self.e.GetEventObject().SetLabel(i)
+        
+
