@@ -1,29 +1,54 @@
 import sys 
-from pylab import * 
+from pylab import *
+import numpy as np
 import wave
-
+import winsound as ws
+import time
 
 def show_wave_n_spec(filename):
-    spf = wave.open(filename,'r')
+    spf = wave.open(filename,'rb')
+    frames = spf.getnframes()
     sound = spf.readframes(spf.getnframes())
-    sound = fromstring(sound, 'Int32')
+    nchannels = spf.getnchannels()
+    sampwidth = spf.getsampwidth()
+    framerate = 44100
+    nframes = spf.getnframes()
+    sound = fromstring(sound, 'Float32')
     spf.close()
 
+    #ws.PlaySound('beep1.wav', ws.SND_FILENAME)
+    #time.sleep(1)
+
     #now rewriting to new file
-    spf = wave.open('beep1_resampled.wav', 'w')
-    spf.setparams((1, 2, 44100, 0,'NONE', 'not compressed'))
-    spf.writeframesraw(sound)
-    
-    #echo(100.0, sound)
-    return sound 
+    spf = wave.open('beep1_resampled.wav', 'wb')
+    spf.setnchannels(1)
+    spf.setsampwidth(sampwidth)
+    spf.setframerate(framerate)
+    spf.setnframes(nframes)
+    spf.writeframes(sound.tostring())
     spf.close()
+    
+    #ws.PlaySound('beep1_resampled.wav', ws.SND_FILENAME)
+    #time.sleep(1)
+
+
+    spf = wave.open('beep1_resampled.wav','rb')
+    frames = spf.getnframes()
+    sound1 = spf.readframes(frames)
+    sound1 = fromstring(sound1, 'Float32')
+    spf.close()
+    
+    #delay( 30* (len(sound1)/50), 0.9997, sound)
+    
+    return sound1
+    
 
   
 
 def pitchshift(sound, shift):
     spf = wave.open('beep1_pitchshift.wav', 'w')
-    spf.setparams((1, 2, 44100 * shift, 0, 'NONE', 'not compressed'))
-    spf.writeframesraw(sound)
+    spf.setparams((1, 2, 44100 * shift, frames, 'NONE', 'not compressed'))
+    spf.writeframes(sound.tostring())
     plot(sound)
     show()
     spf.close()
@@ -34,34 +59,71 @@ def plotter(sound):
     
 #bitcrusher
 def bitcrusher(sound):
-    spf = wave.open('beep1_bitcrushed.wav', 'w')
+    spf = wave.open('beep1_bitcrushed.wav', 'wb')
     spf.setparams((1, 1, 44100, 0, 'NONE', 'not compressed'))
-    spf.writeframesraw(sound)
-    plot(sound)
+    spf.writeframes(sound.tostring())
+    plot((sound))
     show()
     spf.close()
     
     
 #applying echo to a file
-def echo(delay, sound):
+def echo(delay, att, sound):
 
     outputsound = sound
-    att = [0.008, 0.006, 0.005, 0.003, 0.0001]
-    plot(sound) #need to remove
-    show() #need to remove 
-    p = int(delay)
-    for n in range(0, size(sound)):
-        outputsound[n] = sound[n]
-        if (n - p)>=0: #VERY BUGGY
-                outputsound[n] = (outputsound[n] + att[int(delay) - p + 1]*sound[n - p])
-              
-    plot(outputsound)
+
+    largest = max(outputsound)
+    smallest = min(outputsound)
+    print smallest
+    for p in range(delay+1, len(outputsound)):
+        outputsound[p] = sound[p] + ((att* outputsound[p - delay]))
+        if outputsound[p] > largest or outputsound[p] < smallest:
+            outputsound[p] = 0
+            
     
-    show()
-    spf = wave.open('beep1_echo.wav', 'w')
-    spf.setparams((1, 2, 44100, 0, 'NONE', 'not compressed'))
-    spf.writeframes(outputsound)
-    spf.close()
+    #now write echo to new file
+    spf = wave.open('beep1_echo.wav', 'wb')
+    #set nchannels, sampwidth, framerate, nframes, comptype, compname
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(44100)
+    spf.setnframes(len(outputsound))
+    spf.writeframes(outputsound.tostring())
+    spf.close() #close echo file
+
+    ws.PlaySound('beep1_echo.wav', ws.SND_FILENAME)
+    time.sleep(1)
+    return outputsound
+
+
+#applying echo to a file
+def delay(delay, att, sound):
+
+    outputsound = sound
+
+    largest = max(outputsound)
+    smallest = min(outputsound)
+    print smallest
+    for p in range(delay+1, len(outputsound)):
+        outputsound[p] = sound[p] + ((att * sound[p - delay]))
+        if outputsound[p] > largest or outputsound[p] < smallest:
+            outputsound[p] = 0
+            
+    
+    #now write echo to new file
+    spf = wave.open('beep1_delay.wav', 'wb')
+    #set nchannels, sampwidth, framerate, nframes, comptype, compname
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(44100)
+    spf.setnframes(len(outputsound))
+    spf.writeframes(outputsound.tostring())
+    spf.close() #close delay file
+
+    ws.PlaySound('beep1_delay.wav', ws.SND_FILENAME)
+    time.sleep(1)
+    return outputsound
+
 
 if __name__ == '__main__':
     show_wave_n_spec('beep1.wav')

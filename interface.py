@@ -30,7 +30,7 @@ class PageOne(wx.Panel):
         self.canvs = []
         self.openButtons = []
         self.eButtons = [] #echo
-        self.uButtons = [] #undo
+        self.uButtons = [] #play
         self.dButtons = [] #delay
         self.pButtons = [] #pitch
         self.bButtons = [] #bitcrusher
@@ -54,7 +54,7 @@ class PageOne(wx.Panel):
             canv = FigureCanvas(self.panels[i], -1, self.figures[i])
             self.canvs.append(canv)
 
-            #buttons: open, undo, play, echo, delay, pitch shift, bitcrusher,
+            #buttons: open, play, echo, delay, pitch shift, bitcrusher,
             # and export
             
             #create a button panel
@@ -103,10 +103,10 @@ class PageOne(wx.Panel):
             ex2btn.Bind(wx.EVT_BUTTON, self.OnExportSD)
             self.exButtons_SD.append(ex2btn)
 
-            #create undo button
+            #create play button
             ubtn = wx.Button(self.buttonPanels[i], id = 80 + i,
-                                        label='Undo', size=(80,25))
-            ubtn.Bind(wx.EVT_BUTTON, self.OnUndo)
+                                        label='Play', size=(80,25))
+            ubtn.Bind(wx.EVT_BUTTON, self.OnPlay)
             self.uButtons.append(ubtn)
 
             #create button Sizer
@@ -199,7 +199,7 @@ class PageOne(wx.Panel):
         self.new_frame = ba.ButtonAssignment()
         self.new_frame.Show()
 
-    def OnUndo(self, e):
+    def OnPlay(self, e):
         return
 
 
