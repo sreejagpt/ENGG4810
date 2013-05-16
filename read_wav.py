@@ -8,12 +8,13 @@ import time
 def show_wave_n_spec(filename):
     spf = wave.open(filename,'rb')
     frames = spf.getnframes()
-    sound = spf.readframes(spf.getnframes())
+    sound = spf.readframes(-1)
     nchannels = spf.getnchannels()
     sampwidth = spf.getsampwidth()
     framerate = 44100
     nframes = spf.getnframes()
-    sound = fromstring(sound, 'Float32')
+    print nframes, len(sound)
+    sound = fromstring(sound, 'Int16')
     spf.close()
 
     #ws.PlaySound('beep1.wav', ws.SND_FILENAME)
@@ -25,7 +26,12 @@ def show_wave_n_spec(filename):
     spf.setsampwidth(sampwidth)
     spf.setframerate(framerate)
     spf.setnframes(nframes)
+    min_sound = min(sound)
+    #we need to resolve 16 bit frames to 12 bit
+    for i in range(0, size(sound)):
+        sound[i] = ((sound[i]/16) + min_sound)%4096
     spf.writeframes(sound.tostring())
+    print min(sound), max(sound)
     spf.close()
     
     #ws.PlaySound('beep1_resampled.wav', ws.SND_FILENAME)
@@ -35,7 +41,7 @@ def show_wave_n_spec(filename):
     spf = wave.open('beep1_resampled.wav','rb')
     frames = spf.getnframes()
     sound1 = spf.readframes(frames)
-    sound1 = fromstring(sound1, 'Float32')
+    sound1 = fromstring(sound1, 'Int16')
     spf.close()
     
     #delay( 30* (len(sound1)/50), 0.9997, sound)
