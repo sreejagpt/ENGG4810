@@ -11,13 +11,15 @@ import sys
 
 import wave
 import button_assignment as ba
+import effects_screens as effs
+import winsound as ws
 
 class PageOne(wx.Panel):
     #Effects screen
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.dirname='C:\Python27\ENGG4810'
-
+        self.EffectId = -1
         self.currentid = -1
         self.holdlatchmode = 'hold'
         self.frame = parent
@@ -26,7 +28,7 @@ class PageOne(wx.Panel):
         self.buttonassignments = [(None, None)] * 16 #which button is assigned to what?
         self.inputfilenames = [None] * 5
         self.panels = []
-        self.figures = []
+        self.figures = [None] * 5
         self.canvs = []
         self.openButtons = []
         self.eButtons = [] #echo
@@ -37,10 +39,10 @@ class PageOne(wx.Panel):
         self.exButtons = [] #export via serial
         self.exButtons_SD = [] #export via SD
         self.buttonPanels = []
-        self.sliders = []
+        
 
         Publisher().subscribe(self.showFrame, ("show.mainframe"))
-
+        Publisher().subscribe(self.echoTime, ("receive.echoVals"))
         #master VSizer:
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -50,7 +52,7 @@ class PageOne(wx.Panel):
             self.panels.append(panel)
             #create canvas 
             fig = Figure(None, facecolor="grey")
-            self.figures.append(fig)
+            self.figures[i] = fig
             canv = FigureCanvas(self.panels[i], -1, self.figures[i])
             self.canvs.append(canv)
 
@@ -87,7 +89,7 @@ class PageOne(wx.Panel):
 
             #create bitcrusher button
             bbtn = wx.Button(self.buttonPanels[i], id = 50 + i,
-                                        label='Bitcrusher', size=(80,25))
+                                        label='Dcmtr/Bitcrshr', size=(80,25))
             bbtn.Bind(wx.EVT_BUTTON, self.OnDelay)
             self.bButtons.append(bbtn)
 
@@ -121,18 +123,13 @@ class PageOne(wx.Panel):
                                  (self.exButtons_SD[i], 0, wx.EXPAND)])
             self.buttonPanels[i].SetSizerAndFit(self.buttonSizer)
 
-            #create vertical slider
-            sld = wx.Slider(self.panels[i], value=280, minValue=100,
-                            maxValue=500, size=(-1, 100), id = 90 + i,
-                            style=wx.SL_VERTICAL | wx.SL_AUTOTICKS)
-            sld.SetTickFreq(80, 1)
-            self.sliders.append(sld)
+            
             #create sizer
             innerVSizer = wx.BoxSizer(wx.HORIZONTAL)
             innerVSizer.Add(self.canvs[i], 1, border=4,
                                  flag=wx.EXPAND | wx.ALL)
             innerVSizer.Add(self.buttonPanels[i], 0, border=4)
-            innerVSizer.Add(self.sliders[i], 0, border=4)
+            
             self.panels[i].SetSizerAndFit(innerVSizer)
             self.masterVSizer.Add(self.panels[i], 1, wx.EXPAND | wx.ALL, 4)
 
@@ -147,24 +144,25 @@ class PageOne(wx.Panel):
             self.dirname = dlg.GetDirectory()
 
             sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
-            id = (e.GetId())%10
+            ide = (e.GetId())%10
             #now we have the sound file!!
             #add it to our 'pure' sound collection
-            self.inputsounds[id] = sound
-            self.inputfilenames[id] = self.filename            
-            self.outputsounds[id] = sound #WARNING TODO this must be removed after implementing effects
-            self.axes = self.figures[id].add_subplot(111)
-            #clear axes first
-            self.axes.cla()
+            self.inputsounds[ide] = sound
+            self.inputfilenames[ide] = self.filename            
+            self.outputsounds[ide] = sound #WARNING TODO this must be removed after implementing effects
+            self.axes = self.figures[ide].add_subplot(111)
             
-            for i in range(0, len(sound)):
-                sound[i] = sound[i]/1000;
+            #clear axes first
+            self.axes.clear()
+            
+            #for i in range(0, len(sound)):
+             #   sound[i] = sound[i]/1000;
             self.axes.plot(sound, "-b")
             self.axes.set_axis_off()
             self.axes.set_ybound(lower = min(sound), upper = max(sound))
             self.axes.set_xbound(lower = 0, upper = len(sound))
             
-            self.canvs[id] = FigureCanvas(self.panels[id], -1, self.figures[id])
+            self.canvs[ide] = FigureCanvas(self.panels[ide], -1, self.figures[ide])
             
             
         dlg.Destroy()
@@ -181,7 +179,46 @@ class PageOne(wx.Panel):
         frame = self.GetParent()
         frame.Show()
 
+    def echoTime(self, msg):
+        self.alpha = msg.data[0]
+        self.delay = msg.data[1]
+        #call Echo!
+        
+        sound = self.inputsounds[self.EffectId]
+
+        if sound == None:
+            return
+        self.delay = round(((int(self.delay)) * len(sound))/100)
+        
+        sound = wav.echo(self.inputfilenames[self.EffectId], int(self.delay),
+                         float(self.alpha), sound)
+        self.axes = self.figures[self.EffectId].add_subplot(111)
+        print 'Filename: ', self.inputfilenames[self.EffectId]
+        #clear axes first
+        self.axes.clear()
+        self.inputsounds[self.EffectId] = sound
+        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_echo.wav'
+        self.axes.plot(sound, "-b")
+        self.axes.set_axis_off()
+        self.axes.set_ybound(lower = min(sound), upper = max(sound))
+        self.axes.set_xbound(lower = 0, upper = len(sound))
+            
+        self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
+
+
+
     def OnEcho(self, e):
+        #open little window which inputs attenuation and delay
+        self.new_frame = effs.EchoScreen()
+        self.new_frame.Show()
+        #get sound from self.inputsounds
+        self.EffectId = e.GetId() % 20
+        print 'self.EffectId::', self.EffectId
+        #apply echo
+        #sound = wav.echo(delay, echo, sound)
+        #update self.inputsound[id] with echo
+        #get canvas from self.canvs
+        #clear it, and plot on it
         return
     
     def OnDelay(self, e):
@@ -200,6 +237,10 @@ class PageOne(wx.Panel):
         self.new_frame.Show()
 
     def OnPlay(self, e):
+        ide = (e.GetId()) % 80
+        print 'Now attempting to play ', self.inputfilenames[ide]
+        #now play the file
+        ws.PlaySound(self.inputfilenames[ide], ws.SND_FILENAME)
         return
 
 

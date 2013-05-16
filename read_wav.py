@@ -13,7 +13,7 @@ def show_wave_n_spec(filename):
     sampwidth = spf.getsampwidth()
     framerate = 44100
     nframes = spf.getnframes()
-    print nframes, len(sound)
+    
     sound = fromstring(sound, 'Int16')
     spf.close()
 
@@ -21,84 +21,133 @@ def show_wave_n_spec(filename):
     #time.sleep(1)
 
     #now rewriting to new file
-    spf = wave.open('beep1_resampled.wav', 'wb')
+    filename_resampled = filename.split('.wav')[0]+'_resampled.wav'
+    spf = wave.open(filename_resampled, 'wb')
     spf.setnchannels(1)
     spf.setsampwidth(sampwidth)
     spf.setframerate(framerate)
     spf.setnframes(nframes)
-    min_sound = min(sound)
+    
     #we need to resolve 16 bit frames to 12 bit
-    for i in range(0, size(sound)):
-        sound[i] = ((sound[i]/16) + min_sound)%4096
-    spf.writeframes(sound.tostring())
-    print min(sound), max(sound)
+    sound=convert_to_12_bit_unsigned(sound)
+    spf.writeframes(sound.tostring()) 
+   
     spf.close()
     
-    #ws.PlaySound('beep1_resampled.wav', ws.SND_FILENAME)
-    #time.sleep(1)
-
-
-    spf = wave.open('beep1_resampled.wav','rb')
+    
+    spf = wave.open(filename_resampled,'rb')
     frames = spf.getnframes()
     sound1 = spf.readframes(frames)
     sound1 = fromstring(sound1, 'Int16')
     spf.close()
     
-    #delay( 30* (len(sound1)/50), 0.9997, sound)
-    
+    #echo('laser.wav', 30* (len(sound1)/50), 0.9997, sound) #this is my effects tester zone
+    #pitchshift(sound1, 1.8)
     return sound1
     
+def convert_to_12_bit_unsigned(sound):
+    min_sound = min(sound)
+    
+    for i in range(0, size(sound)):
+        sound[i] = ((sound[i]/16) + min_sound)%4096
+        #sound[i] = sound[i] & (65535/(2**4))
+    return sound
+    
+def decimator(sound, dec, crush):
+    spf = wave.open('beep1_decimator.wav', 'wb')
+    outputsound = sound
+    
+    for i in range(0, (len(sound) - dec), dec):
+        for j in range(i, i+dec):
+            outputsound[j] = sound[i]
 
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(44100)
+    spf.setnframes(len(outputsound))
+    
+    spf.writeframes(outputsound.tostring())
+    
+    spf.close()
+    return bitcrusher(outputsound, crush)
   
 
-def pitchshift(sound, shift):
-    spf = wave.open('beep1_pitchshift.wav', 'w')
-    spf.setparams((1, 2, 44100 * shift, frames, 'NONE', 'not compressed'))
+def pitchshift(sound, shift): #shift is a decimal
+    spf = wave.open('beep1_pitchshift.wav', 'wb')
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(round(44100 * shift))
+    spf.setnframes(round(len(sound)/shift))
+    sound = convert_to_12_bit_unsigned(sound)
     spf.writeframes(sound.tostring())
-    plot(sound)
-    show()
     spf.close()
 
+
+    spf = wave.open('beep1_pitchshift.wav', 'rb')
+    return sound
+    
 def plotter(sound):
     plot(sound)
     show()
     
 #bitcrusher
-def bitcrusher(sound):
+def bitcrusher(sound, crush):
+    crush = crush % 12 # :D
     spf = wave.open('beep1_bitcrushed.wav', 'wb')
-    spf.setparams((1, 1, 44100, 0, 'NONE', 'not compressed'))
-    spf.writeframes(sound.tostring())
-    plot((sound))
-    show()
-    spf.close()
+    max_sound = max(sound)
+    print min(sound), max(sound)
     
+    for i in range(0, len(sound)):
+        sound[i] = sound[i] & (131070/(2**crush))
+
+    print min(sound), max(sound)
+    max_sound2 = max(sound)
+    for i in range(0, len(sound)):
+        sound[i] = sound[i] * round(max_sound/max_sound2)
+
+    print min(sound), max(sound)
+    
+
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(44100)
+    spf.setnframes(len(sound))
+    
+    spf.writeframes(sound.tostring())
+    
+    spf.close()
+    return sound
     
 #applying echo to a file
-def echo(delay, att, sound):
+def echo(filename, delay, att, sound):
 
     outputsound = sound
 
     largest = max(outputsound)
     smallest = min(outputsound)
-    print smallest
+    print 'From echo: ', filename, delay, att
     for p in range(delay+1, len(outputsound)):
         outputsound[p] = sound[p] + ((att* outputsound[p - delay]))
-        if outputsound[p] > largest or outputsound[p] < smallest:
-            outputsound[p] = 0
+        #if outputsound[p] > largest or outputsound[p] < smallest:
+         #   outputsound[p] = 0
             
-    
+    newname = filename.split('.wav')[0]+'_echo.wav'
+   
     #now write echo to new file
-    spf = wave.open('beep1_echo.wav', 'wb')
+    spf = wave.open(newname, 'wb')
     #set nchannels, sampwidth, framerate, nframes, comptype, compname
     spf.setnchannels(1)
     spf.setsampwidth(2)
     spf.setframerate(44100)
+    
     spf.setnframes(len(outputsound))
+    outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close echo file
 
-    ws.PlaySound('beep1_echo.wav', ws.SND_FILENAME)
-    time.sleep(1)
+    #ws.PlaySound('beep1_echo.wav', ws.SND_FILENAME)
+    #time.sleep(1)
+ 
     return outputsound
 
 
@@ -109,7 +158,7 @@ def delay(delay, att, sound):
 
     largest = max(outputsound)
     smallest = min(outputsound)
-    print smallest
+   
     for p in range(delay+1, len(outputsound)):
         outputsound[p] = sound[p] + ((att * sound[p - delay]))
         if outputsound[p] > largest or outputsound[p] < smallest:
@@ -123,6 +172,7 @@ def delay(delay, att, sound):
     spf.setsampwidth(2)
     spf.setframerate(44100)
     spf.setnframes(len(outputsound))
+    outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close delay file
 
@@ -132,4 +182,4 @@ def delay(delay, att, sound):
 
 
 if __name__ == '__main__':
-    show_wave_n_spec('beep1.wav')
+    show_wave_n_spec('laser.wav')
