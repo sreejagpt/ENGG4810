@@ -53,8 +53,9 @@ def convert_to_12_bit_unsigned(sound):
         #sound[i] = sound[i] & (65535/(2**4))
     return sound
     
-def decimator(sound, dec, crush):
-    spf = wave.open('beep1_decimator.wav', 'wb')
+def decimator(filename, sound, dec, crush):
+    newname = filename.split('.wav')[0]+'_decimator.wav'
+    spf = wave.open(newname, 'wb')
     outputsound = sound
     
     for i in range(0, (len(sound) - dec), dec):
@@ -69,11 +70,12 @@ def decimator(sound, dec, crush):
     spf.writeframes(outputsound.tostring())
     
     spf.close()
-    return bitcrusher(outputsound, crush)
+    return bitcrusher(filename, outputsound, crush)
   
 
-def pitchshift(sound, shift): #shift is a decimal
-    spf = wave.open('beep1_pitchshift.wav', 'wb')
+def pitchshift(filename, sound, shift): #shift is a decimal
+    newname = filename.split('.wav')[0]+'_pitchshift.wav'
+    spf = wave.open(newname, 'wb')
     spf.setnchannels(1)
     spf.setsampwidth(2)
     spf.setframerate(round(44100 * shift))
@@ -82,8 +84,6 @@ def pitchshift(sound, shift): #shift is a decimal
     spf.writeframes(sound.tostring())
     spf.close()
 
-
-    spf = wave.open('beep1_pitchshift.wav', 'rb')
     return sound
     
 def plotter(sound):
@@ -91,9 +91,10 @@ def plotter(sound):
     show()
     
 #bitcrusher
-def bitcrusher(sound, crush):
+def bitcrusher(filename, sound, crush):
     crush = crush % 12 # :D
-    spf = wave.open('beep1_bitcrushed.wav', 'wb')
+    newname = filename.split('.wav')[0]+'_bitcrushed.wav'
+    spf = wave.open(newname, 'wb')
     max_sound = max(sound)
     print min(sound), max(sound)
     
@@ -152,7 +153,7 @@ def echo(filename, delay, att, sound):
 
 
 #applying echo to a file
-def delay(delay, att, sound):
+def delay(filename, delay, att, sound):
 
     outputsound = sound
 
@@ -166,7 +167,8 @@ def delay(delay, att, sound):
             
     
     #now write echo to new file
-    spf = wave.open('beep1_delay.wav', 'wb')
+    newname = filename.split('.wav')[0]+'_delay.wav'
+    spf = wave.open(newname, 'wb')
     #set nchannels, sampwidth, framerate, nframes, comptype, compname
     spf.setnchannels(1)
     spf.setsampwidth(2)
@@ -176,8 +178,6 @@ def delay(delay, att, sound):
     spf.writeframes(outputsound.tostring())
     spf.close() #close delay file
 
-    ws.PlaySound('beep1_delay.wav', ws.SND_FILENAME)
-    time.sleep(1)
     return outputsound
 
 

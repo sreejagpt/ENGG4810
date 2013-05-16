@@ -43,6 +43,10 @@ class PageOne(wx.Panel):
 
         Publisher().subscribe(self.showFrame, ("show.mainframe"))
         Publisher().subscribe(self.echoTime, ("receive.echoVals"))
+        Publisher().subscribe(self.decBitTime, ("receive.decBitVals"))
+        Publisher().subscribe(self.delayTime, ("receive.delayVals"))
+        Publisher().subscribe(self.psTime, ("receive.psVals"))
+        
         #master VSizer:
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -84,13 +88,13 @@ class PageOne(wx.Panel):
             #create pitch shift button
             pbtn = wx.Button(self.buttonPanels[i], id = 40 + i,
                                         label='Pitch Shift', size=(80,25))
-            pbtn.Bind(wx.EVT_BUTTON, self.OnDelay)
+            pbtn.Bind(wx.EVT_BUTTON, self.OnPitchShift)
             self.pButtons.append(pbtn)
 
             #create bitcrusher button
             bbtn = wx.Button(self.buttonPanels[i], id = 50 + i,
                                         label='Dcmtr/Bitcrshr', size=(80,25))
-            bbtn.Bind(wx.EVT_BUTTON, self.OnDelay)
+            bbtn.Bind(wx.EVT_BUTTON, self.OnBitcrush)
             self.bButtons.append(bbtn)
 
             #create export button
@@ -179,6 +183,56 @@ class PageOne(wx.Panel):
         frame = self.GetParent()
         frame.Show()
 
+    def decBitTime(self, msg):
+        #extract values from message
+        self.dec = msg.data[0]
+        self.bitcrusher = msg.data[1]
+        #call Echo!
+        
+        sound = self.inputsounds[self.EffectId]
+
+        if sound == None:
+            return
+        
+        sound = wav.decimator(self.inputfilenames[self.EffectId], sound, int(self.dec), int(self.bitcrusher))
+        self.axes = self.figures[self.EffectId].add_subplot(111)
+        #clear axes first
+        self.axes.clear()
+        self.inputsounds[self.EffectId] = sound
+        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_bitcrushed.wav'
+        self.axes.plot(sound, "-b")
+        self.axes.set_axis_off()
+        self.axes.set_ybound(lower = min(sound), upper = max(sound))
+        self.axes.set_xbound(lower = 0, upper = len(sound))
+            
+        self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
+        
+    def delayTime(self, msg):
+        self.alpha = msg.data[0]
+        self.delay = msg.data[1]
+        #call Echo!
+        
+        sound = self.inputsounds[self.EffectId]
+
+        if sound == None:
+            return
+        self.delay = round(((int(self.delay)) * len(sound))/100)
+        
+        sound = wav.delay(self.inputfilenames[self.EffectId], int(self.delay),
+                         float(self.alpha), sound)
+        self.axes = self.figures[self.EffectId].add_subplot(111)
+        print 'Filename: ', self.inputfilenames[self.EffectId]
+        #clear axes first
+        self.axes.clear()
+        self.inputsounds[self.EffectId] = sound
+        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_delay.wav'
+        self.axes.plot(sound, "-b")
+        self.axes.set_axis_off()
+        self.axes.set_ybound(lower = min(sound), upper = max(sound))
+        self.axes.set_xbound(lower = 0, upper = len(sound))
+            
+        self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
+
     def echoTime(self, msg):
         self.alpha = msg.data[0]
         self.delay = msg.data[1]
@@ -205,7 +259,28 @@ class PageOne(wx.Panel):
             
         self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
 
+    def psTime(self, msg):
+        self.ps = float(msg.data)
+        #call Echo!
+        
+        sound = self.inputsounds[self.EffectId]
 
+        if sound == None:
+            return
+        
+        
+        sound = wav.pitchshift(self.inputfilenames[self.EffectId], sound, self.ps)
+        self.axes = self.figures[self.EffectId].add_subplot(111)
+        #clear axes first
+        self.axes.clear()
+        self.inputsounds[self.EffectId] = sound
+        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_pitchshift.wav'
+        self.axes.plot(sound, "-b")
+        self.axes.set_axis_off()
+        self.axes.set_ybound(lower = min(sound), upper = max(sound))
+        self.axes.set_xbound(lower = 0, upper = len(sound))
+            
+        self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
 
     def OnEcho(self, e):
         #open little window which inputs attenuation and delay
@@ -213,15 +288,27 @@ class PageOne(wx.Panel):
         self.new_frame.Show()
         #get sound from self.inputsounds
         self.EffectId = e.GetId() % 20
-        print 'self.EffectId::', self.EffectId
-        #apply echo
-        #sound = wav.echo(delay, echo, sound)
-        #update self.inputsound[id] with echo
-        #get canvas from self.canvs
-        #clear it, and plot on it
         return
+
+    def OnBitcrush(self, e):
+        self.new_frame = effs.BitcrushScreen()
+        self.new_frame.Show()
+        self.EffectId = e.GetId() % 50
     
     def OnDelay(self, e):
+        #open little window which inputs attenuation and delay
+        self.new_frame = effs.DelayScreen()
+        self.new_frame.Show()
+        #get sound from self.inputsounds
+        self.EffectId = e.GetId() % 30
+        return
+
+    def OnPitchShift(self, e):
+        #open little window which inputs shift value
+        self.new_frame = effs.PitchShiftScreen()
+        self.new_frame.Show()
+        #get sound from self.inputsounds
+        self.EffectId = e.GetId() % 40
         return
 
     def OnExportUSB(self, e):
@@ -238,7 +325,6 @@ class PageOne(wx.Panel):
 
     def OnPlay(self, e):
         ide = (e.GetId()) % 80
-        print 'Now attempting to play ', self.inputfilenames[ide]
         #now play the file
         ws.PlaySound(self.inputfilenames[ide], ws.SND_FILENAME)
         return
