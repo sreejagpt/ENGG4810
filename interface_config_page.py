@@ -67,7 +67,7 @@ class PageTwo(wx.Panel):
         buttonid = event.GetId()
         if self.buttonassignments[buttonid][1] != None:
             self.txt.SetLabel("Button "+str(buttonid + 1)+" stores file "+self.buttonassignments[buttonid][1]\
-                +"\nMode: "+self.buttonassignments[buttonid][0]+"\nClick on button to play the file.")
+                +"\nMode: "+self.buttonassignments[buttonid][0])
         time.sleep(0.05)
         event.Skip()
         
@@ -91,6 +91,9 @@ class EffectsEditor(wx.Panel):
         self.decode = {'lpf': '2nd Order Lowpass', 'hpf': '2nd Order High Pass', 'bpf': '2nd Order Bandpass',
         'nf': '2nd Order Notch Filter', 'delay': 'Delay', 'echo': 'Echo', 'dcb': 'Decimator/Bitcrusher',
         'bko': 'Bitwise KO', '1': '1', '2': '1/2', '4': '1/4', '6':'1/6', '8':'1/8', '16':'1/16', '32':'1/32'}
+        self.encode = {'2nd Order Lowpass':'lpf', '2nd Order High Pass':'hpf', '2nd Order Bandpass':'bpf',
+        '2nd Order Notch Filter':'nf', 'Delay':'delay', 'Echo' : 'echo', 'Decimator/Bitcrusher':'dcb',
+        'Bitwise KO':'bko', '1': '1','1/2': '2', '1/4':'4', '1/6':'6', '1/8':'8', '1/16':'16', '1/32':'32'}
         self.effect_options = ['2nd Order Lowpass', '2nd Order High Pass', '2nd Order Bandpass',
             '2nd Order Notch Filter', 'Delay', 'Echo', 'Decimator/Bitcrusher', 'Bitwise KO']
 
@@ -188,14 +191,48 @@ class EffectsEditor(wx.Panel):
         return #TODO
     
     def OnExportSD(self, e):
-        #read each widget in effects editor
-        #get corresponding key from self.decode
-        #create a file where each line is key and value from self.vals
-        #prompt user to save file
+        self.BuildFile(e)
+        #saves to SD card
+        try:
+            sdfile = open('I:\config.cfg', 'w')
+        
+            cfgfile = open('config.cfg', 'r')
+        except IOError:
+            return
+        for line in cfgfile:
+            sdfile.write(line)
+        cfgfile.close()
+        sdfile.close()
+        
+
+        return
+
+    def BuildFile(self, e):
+        slot1 = self.slot1_combobox.GetValue()
+        slot2 = self.slot2_combobox.GetValue()
+        loop = self.loop_combobox.GetValue()
+        tempo = self.tempo_textctrl.GetValue()
+
+        #convert to short forms to be used in config file
+        slot1_enc = self.encode[str(slot1.strip())]
+        slot2_enc = self.encode[str(slot2.strip())]
+        loop_enc = self.encode[str(loop.strip())]
+        
+
+        f = open('config.cfg', 'w')
+        f.write('slot1 '+slot1_enc+'\n')
+        f.write('slot2 '+slot2_enc+'\n')
+        f.write('loop '+loop_enc+'\n')
+        f.write('tempo '+tempo+'\n')
+        f.close()
         return
 
     def OnExportUSB(self, e):
-        print 'test'
+        self.BuildFile(e)
+        #start serial comms
+        return
+
+
 
     def OnSelect(self, e):
         i = e.GetString()

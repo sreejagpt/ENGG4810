@@ -43,6 +43,9 @@ def show_wave_n_spec(filename):
     
 def convert_to_12_bit_unsigned(sound):
     
+
+    if min(sound) >= 0 and max(sound) < 4096:
+        return sound
     sound = sound >> 4
     sound = sound - min(sound)
     
@@ -88,6 +91,7 @@ def plotter(sound):
 #bitcrusher
 def bitcrusher(filename, sound, crush):
     crush = crush % 12 # :D
+    crush = crush + 1
     newname = filename.split('.wav')[0]+'_bitcrushed.wav'
     spf = wave.open(newname, 'wb')
     #max_sound = max(sound)
@@ -134,7 +138,7 @@ def echo(filename, delay, att, sound):
     spf.setframerate(44100)
     
     spf.setnframes(len(outputsound))
-    #outputsound = convert_to_12_bit_unsigned(outputsound)
+    outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close echo file
 
@@ -166,7 +170,7 @@ def delay(filename, delay, att, sound):
     spf.setsampwidth(2)
     spf.setframerate(44100)
     spf.setnframes(len(outputsound))
-    #outputsound = convert_to_12_bit_unsigned(outputsound)
+    outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close delay file
 
