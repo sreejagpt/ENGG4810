@@ -113,7 +113,7 @@ class DelayScreen(wx.Frame):
 
 class BitcrushScreen(wx.Frame):
     """ This class defines a little popup window that helps the user  assign
-    parameters for the echo function"""
+    parameters for the Decimator/Bitcrush function"""
     def __init__(self):
         """Constructor"""
         wx.Frame.__init__(self, None, title = "Bitcrush Parameters", style=wx.SYSTEM_MENU)
