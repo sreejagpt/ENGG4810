@@ -39,6 +39,7 @@ def show_wave_n_spec(filename):
     
     #echo('laser.wav', 30* (len(sound1)/50), 0.9997, sound) #this is my effects tester zone
     #pitchshift(sound1, 1.8)
+    #lowpassfilter(sound1, 10000)
     return sound
     
 def convert_to_12_bit_unsigned(sound):
@@ -138,7 +139,7 @@ def echo(filename, delay, att, sound):
     spf.setframerate(44100)
     
     spf.setnframes(len(outputsound))
-    outputsound = convert_to_12_bit_unsigned(outputsound)
+    #outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close echo file
 
@@ -170,18 +171,94 @@ def delay(filename, delay, att, sound):
     spf.setsampwidth(2)
     spf.setframerate(44100)
     spf.setnframes(len(outputsound))
-    outputsound = convert_to_12_bit_unsigned(outputsound)
+    #outputsound = convert_to_12_bit_unsigned(outputsound)
     spf.writeframes(outputsound.tostring())
     spf.close() #close delay file
 
     return outputsound
 
+"""
+Test function
+"""
+def lowpassfilter(sound, thresh):
+    outputsound = sound
+    for i in range(0, len(sound) - 5, 5):
+        outputsound[i] = sound[i] + sound[i + 1] + sound[i + 2] + sound[i + 3] +\
+            sound[i + 4] 
+        outputsound = outputsound/5
+    plot(sound)
+    show()
+    plot(outputsound)
+    show()
 
+
+"""
+Test function
+"""
+def test():
+
+    sound1 = show_wave_n_spec('beach.wav')
+    sound2 = show_wave_n_spec('laser.wav')
+    outputsound = sound1
+    print min(outputsound), max(outputsound)
+    print min(sound2), max(sound2)
+    for i in range(0, min(len(sound2), len(sound1))):
+        outputsound[i] = sound1[i]/2 + sound2[i]/2
+
+    newname = 'playme.wav'
+    print min(outputsound), max(outputsound)
+    #now write echo to new file
+    spf = wave.open(newname, 'wb')
+    #set nchannels, sampwidth, framerate, nframes, comptype, compname
+    spf.setnchannels(1)
+    spf.setsampwidth(2)
+    spf.setframerate(44100)
+    
+    spf.setnframes(len(outputsound))
+    spf.writeframes(outputsound.tostring())
+    spf.close() #close echo file
+
+    ws.PlaySound('playme.wav', ws.SND_FILENAME)
+
+
+def send_to_mpc():
+    w = open('config.cfg','rb')
+    
+    import serial
+    ser = serial.Serial()
+    ser.port=12
+    ser.baudrate=115200
+    
+    ser.open()
+    ser.write("dummy\r\n")
+    ser.write("cf.cfgH\n")
+
+    import os
+    statinfo = os.stat('config.cfg')
+    
+    
+    ser.write("delay \n")
+    ser.write("echo     \n")
+    ser.write("32       \r\n")
+    ser.write("115\r\n")
+
+    ser.close()
+    w.close()  
+    """
+    import serial
+    ser = serial.Serial()
+    ser.port=12
+    ser.baudrate=115200
+    ser.open()
+    ser.write("dummy\r\n")
+    ser.write("01.wavH\n")
+    ser.write(sound1[0:511])
+    ser.write("\n")
+    ser.close()
+    """
+
+
+    
 if __name__ == '__main__':
-    show_wave_n_spec('laser.wav')
-    show_wave_n_spec('beach.wav')
-    show_wave_n_spec('littlesecrets.wav')
-    show_wave_n_spec('techno.wav')
-    show_wave_n_spec('thump.wav')
-    show_wave_n_spec('manybeeps.wav')
-    show_wave_n_spec('sleepyhead.wav')
+    send_to_mpc()
+    #show_wave_n_spec('sound3.wav')

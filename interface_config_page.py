@@ -58,7 +58,6 @@ class PageTwo(wx.Panel):
 
     def UpdateButtonAssignments(self, msg):
         self.buttonassignments = msg.data
-        print "Just received \n", self.buttonassignments
 
     def onMouseOver(self, event):
         # mouseover changes text on button

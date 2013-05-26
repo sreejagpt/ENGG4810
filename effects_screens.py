@@ -211,5 +211,60 @@ class PitchShiftScreen(wx.Frame):
         Publisher().sendMessage(("receive.psVals"), msg)
         self.Close()
 
+class SliceScreen(wx.Frame):
+    """ This class defines a little popup window that helps the user  assign
+    parameters for the pitch shift function"""
+    def __init__(self):
+        """Constructor"""
+        wx.Frame.__init__(self, None, title = "Slice Parameters", style=wx.SYSTEM_MENU)
+        self.id = -1
+        self.start=0
+        self.stop=100
+        self.vertsizer = wx.BoxSizer(wx.VERTICAL)
+        self.panel = wx.Panel(self)
+        
+
+        #Instruction label:
+        msg = "Enter Parameters for Slicing"
+        self.vertsizer.Add(wx.StaticText(self.panel, label=msg), 0, wx.ALIGN_CENTER|wx.ALL, border = 50)
+
+        #Start Label
+        self.vertsizer.Add(wx.StaticText(self.panel, label="Enter Start Point (Percentage of length):"), 
+            0, wx.ALIGN_CENTER, border = 10)
+
+        #Alpha text Area
+        self.start_textctrl = wx.TextCtrl(self.panel, -1)
+        self.vertsizer.Add(self.start_textctrl, 0, wx.ALIGN_CENTER, border = 50)
+
+        #Stop Label
+        self.vertsizer.Add(wx.StaticText(self.panel, label="Enter Stop Point (Percentage of length):"), 
+            0, wx.ALIGN_CENTER, border = 10)
+
+        #Stop text Area
+        self.stop_textctrl = wx.TextCtrl(self.panel, -1)
+        self.vertsizer.Add(self.stop_textctrl, 0, wx.ALIGN_CENTER, border = 50)
+
+
+        #Ok button
+        self.okbutton = wx.Button(self.panel, label='OK', size=(80,25))
+        self.okbutton.Bind(wx.EVT_BUTTON, self.OnOK)
+        self.vertsizer.Add(self.okbutton, 0, wx.ALIGN_CENTER | wx.ALL, border = 50)
+
+        self.panel.SetSizerAndFit(self.vertsizer)
+        self.SetSize((250, 350))
+        self.Center()
+
+
+    def OnOK(self, e):
+        #Read text boxes and send over (alpha, delay)
+        self.start = self.start_textctrl.GetValue()
+        self.stop = self.stop_textctrl.GetValue()
+        if self.start > self.stop:
+            return
+        msg = (self.start, self.stop)
+        
+        Publisher().sendMessage(("receive.sliceVals"), msg)
+        self.Close()
+
 
     

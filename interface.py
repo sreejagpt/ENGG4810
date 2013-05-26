@@ -3,8 +3,7 @@ import matplotlib
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure 
 import wx 
-from wx.lib.pubsub import Publisher 
-import wx.lib.plot as plt 
+from wx.lib.pubsub import Publisher
 import interface_config_page as pg2 
 import read_wav as wav 
 import sys
@@ -36,6 +35,7 @@ class PageOne(wx.Panel):
         self.dButtons = [] #delay
         self.pButtons = [] #pitch
         self.bButtons = [] #bitcrusher
+        self.sliceButtons=[]
         self.exButtons = [] #export via serial
         self.exButtons_SD = [] #export via SD
         self.buttonPanels = []
@@ -46,6 +46,7 @@ class PageOne(wx.Panel):
         Publisher().subscribe(self.decBitTime, ("receive.decBitVals"))
         Publisher().subscribe(self.delayTime, ("receive.delayVals"))
         Publisher().subscribe(self.psTime, ("receive.psVals"))
+        Publisher().subscribe(self.sliceTime, ("receive.sliceVals"))
         
         #master VSizer:
         self.masterVSizer = wx.BoxSizer(wx.VERTICAL)
@@ -115,16 +116,23 @@ class PageOne(wx.Panel):
             ubtn.Bind(wx.EVT_BUTTON, self.OnPlay)
             self.uButtons.append(ubtn)
 
+            #create Slice button
+            slbtn = wx.Button(self.buttonPanels[i], id = 90 + i,
+                                        label='Slice', size=(80,25))
+            slbtn.Bind(wx.EVT_BUTTON, self.OnSlice)
+            self.sliceButtons.append(slbtn)
+
             #create button Sizer
-            self.buttonSizer = wx.GridSizer(4, 2, 1, 1)
+            self.buttonSizer = wx.GridSizer(5, 2, 1, 1)
             self.buttonSizer.AddMany([(self.openButtons[i], 0, wx.EXPAND),
                                  (self.eButtons[i], 0, wx.EXPAND),
                                  (self.dButtons[i], 0, wx.EXPAND),
                                  (self.pButtons[i], 0, wx.EXPAND),
                                  (self.bButtons[i], 0, wx.EXPAND),
                                  (self.exButtons[i], 0, wx.EXPAND),
-                                 (self.uButtons[i], 0, wx.EXPAND),
-                                 (self.exButtons_SD[i], 0, wx.EXPAND)])
+                                 (self.sliceButtons[i], 0, wx.EXPAND),
+                                 (self.exButtons_SD[i], 0, wx.EXPAND),
+                                 (self.uButtons[i], 0, wx.EXPAND)])
             self.buttonPanels[i].SetSizerAndFit(self.buttonSizer)
 
             
@@ -139,6 +147,8 @@ class PageOne(wx.Panel):
 
         self.SetSizerAndFit(self.masterVSizer)
 
+    
+
    
     def OnOpen(self,e):
         """ Open a file"""
@@ -146,7 +156,9 @@ class PageOne(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
-
+            if self.filename.split(".")[1] == "mp3":
+                self.convert_mp3_to_wav(self.filename)
+                self.filename=self.filename.split(".mp3")[0]+".wav"
             sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
             ide = (e.GetId())%10
             #now we have the sound file!!
@@ -159,8 +171,6 @@ class PageOne(wx.Panel):
             #clear axes first
             self.axes.clear()
             
-            #for i in range(0, len(sound)):
-             #   sound[i] = sound[i]/1000;
             self.axes.plot(sound, "-b")
             self.axes.set_axis_off()
             self.axes.set_ybound(lower = min(sound), upper = max(sound))
@@ -170,6 +180,37 @@ class PageOne(wx.Panel):
             
             
         dlg.Destroy()
+
+    def convert_mp3_to_wav( self, name ):
+            import pymedia.audio.acodec as acodec
+            import pymedia.muxer as muxer
+            import time, wave, string, os
+            name=str(name)
+            name1= str.split( name, '.' )
+            name2= string.join( name1[ : len( name1 )- 1 ] )
+            # Open demuxer first
+
+            dm= muxer.Demuxer( name1[ -1 ].lower() )
+            dec= None
+            f= open( name, 'rb' )
+            snd= None
+            s= " "
+            while len( s ):
+                s= f.read( 20000 )
+                if len( s ):
+                    frames= dm.parse( s )
+                    for fr in frames:
+                        if dec== None:
+                            # Open decoder
+
+                            dec= acodec.Decoder( dm.streams[ 0 ] )
+                        r= dec.decode( fr[ 1 ] )
+                        if r and r.data:
+                            if snd== None:
+                                snd= wave.open( name2+ '.wav', 'wb' )
+                                snd.setparams( (r.channels, 2, r.sample_rate, 0, 'NONE','') )
+                            
+                            snd.writeframes( r.data )
 
     def showFrame(self, msg):
         self.buttonpressed = msg.data[0]
@@ -210,8 +251,8 @@ class PageOne(wx.Panel):
     def delayTime(self, msg):
         self.alpha = msg.data[0]
         self.delay = msg.data[1]
-        #call Echo!
         
+        #call Echo! 
         sound = self.inputsounds[self.EffectId]
 
         if sound == None:
@@ -221,7 +262,6 @@ class PageOne(wx.Panel):
         sound = wav.delay(self.inputfilenames[self.EffectId], int(self.delay),
                          float(self.alpha), sound)
         self.axes = self.figures[self.EffectId].add_subplot(111)
-        print 'Filename: ', self.inputfilenames[self.EffectId]
         #clear axes first
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
@@ -247,7 +287,7 @@ class PageOne(wx.Panel):
         sound = wav.echo(self.inputfilenames[self.EffectId], int(self.delay),
                          float(self.alpha), sound)
         self.axes = self.figures[self.EffectId].add_subplot(111)
-        print 'Filename: ', self.inputfilenames[self.EffectId]
+
         #clear axes first
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
@@ -282,6 +322,42 @@ class PageOne(wx.Panel):
             
         self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
 
+    def sliceTime(self, msg):
+        self.start=int(msg.data[0])
+        self.stop=int(msg.data[1])
+
+        sound=self.inputsounds[self.EffectId]
+
+        self.start=int((self.start*len(sound))/100)
+        self.stop=int((self.stop*len(sound))/100)
+
+        sound=sound[self.start:self.stop]
+        #plot new wav file
+        self.axes = self.figures[self.EffectId].add_subplot(111)
+        #clear axes first
+        self.axes.clear()
+        
+        self.axes.plot(sound, "-b")
+        self.axes.set_axis_off()
+        self.axes.set_ybound(lower = min(sound), upper = max(sound))
+        self.axes.set_xbound(lower = 0, upper = len(sound))
+        self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
+
+        #write it to wave file
+        spf = wave.open(self.inputfilenames[self.EffectId].split('.wav')[0]+'_sliced.wav', 'wb')
+        spf.setnchannels(1)
+        spf.setsampwidth(2)
+        spf.setframerate(44100)
+        spf.setnframes(len(sound))
+        spf.writeframes(sound.tostring())
+        spf.close()
+
+        #store it to self.sounds.
+        self.inputsounds[self.EffectId] = sound
+        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_sliced.wav'
+        
+        return
+
     def OnEcho(self, e):
         #open little window which inputs attenuation and delay
         self.new_frame = effs.EchoScreen()
@@ -294,6 +370,11 @@ class PageOne(wx.Panel):
         self.new_frame = effs.BitcrushScreen()
         self.new_frame.Show()
         self.EffectId = e.GetId() % 50
+
+    def OnSlice(self, e):
+        self.new_frame = effs.SliceScreen()
+        self.new_frame.Show()
+        self.EffectId = e.GetId() % 90
     
     def OnDelay(self, e):
         #open little window which inputs attenuation and delay
@@ -330,12 +411,15 @@ class PageOne(wx.Panel):
         return
 
 
+
+
 class MainFrame(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, title="Team Project 2 | Team 13")
 
         # Here we create a panel and a notebook on the panel
         p = wx.Panel(self)
+
         nb = wx.Notebook(p)
 
         # create the page windows as children of the notebook
@@ -354,7 +438,7 @@ class MainFrame(wx.Frame):
         sizer.Add(nb, 1, wx.EXPAND)
         p.SetSizer(sizer)
         self.Maximize()
-        self.Center()
+        #self.Center()
 
 
 
