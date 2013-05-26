@@ -104,7 +104,7 @@ def bitcrusher(filename, sound, crush):
     
     #sound = sound* round(max_sound/max_sound2)
 
-    sound = sound >> (12 - crush)
+    sound = sound << (12 - crush)
     
     spf.setnchannels(1)
     spf.setsampwidth(2)
