@@ -177,20 +177,6 @@ def delay(filename, delay, att, sound):
 
     return outputsound
 
-"""
-Test function
-"""
-def lowpassfilter(sound, thresh):
-    outputsound = sound
-    for i in range(0, len(sound) - 5, 5):
-        outputsound[i] = sound[i] + sound[i + 1] + sound[i + 2] + sound[i + 3] +\
-            sound[i + 4] 
-        outputsound = outputsound/5
-    plot(sound)
-    show()
-    plot(outputsound)
-    show()
-
 
 """
 Test function

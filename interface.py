@@ -164,7 +164,7 @@ class PageOne(wx.Panel):
             #now we have the sound file!!
             #add it to our 'pure' sound collection
             self.inputsounds[ide] = sound
-            self.inputfilenames[ide] = self.filename            
+            self.inputfilenames[ide] = self.filename.split(".wav")[0]+"_resampled.wav"        
             self.outputsounds[ide] = sound #WARNING TODO this must be removed after implementing effects
             self.axes = self.figures[ide].add_subplot(111)
             
@@ -237,6 +237,7 @@ class PageOne(wx.Panel):
         
         sound = wav.decimator(self.inputfilenames[self.EffectId], sound, int(self.dec), int(self.bitcrusher))
         self.axes = self.figures[self.EffectId].add_subplot(111)
+        
         #clear axes first
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
@@ -325,36 +326,45 @@ class PageOne(wx.Panel):
     def sliceTime(self, msg):
         self.start=int(msg.data[0])
         self.stop=int(msg.data[1])
-
+        print "Slicing "+self.inputfilenames[self.EffectId]
         sound=self.inputsounds[self.EffectId]
 
         self.start=int((self.start*len(sound))/100)
         self.stop=int((self.stop*len(sound))/100)
-
-        sound=sound[self.start:self.stop]
+        
+        sound=sound[self.start:self.stop+1]
         #plot new wav file
         self.axes = self.figures[self.EffectId].add_subplot(111)
         #clear axes first
         self.axes.clear()
-        
+          
         self.axes.plot(sound, "-b")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
         self.canvs[self.EffectId] = FigureCanvas(self.panels[self.EffectId], -1, self.figures[self.EffectId])
-
         #write it to wave file
-        spf = wave.open(self.inputfilenames[self.EffectId].split('.wav')[0]+'_sliced.wav', 'wb')
-        spf.setnchannels(1)
-        spf.setsampwidth(2)
-        spf.setframerate(44100)
+
+        spf1=wave.open(self.inputfilenames[self.EffectId], 'rb')
+        channels = spf1.getnchannels()
+        width = spf1.getsampwidth()
+        framerate = spf1.getframerate()
+        nframe=spf1.getnframes()
+        spf1.close()
+
+        spf = wave.open(self.inputfilenames[self.EffectId], 'wb')
+        spf.setnchannels(channels)
+        spf.setsampwidth(width)
+        spf.setframerate(framerate)
         spf.setnframes(len(sound))
         spf.writeframes(sound.tostring())
+
+
         spf.close()
 
         #store it to self.sounds.
         self.inputsounds[self.EffectId] = sound
-        self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_sliced.wav'
+        #self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_sliced.wav'
         
         return
 
@@ -407,6 +417,7 @@ class PageOne(wx.Panel):
     def OnPlay(self, e):
         ide = (e.GetId()) % 80
         #now play the file
+        print "Play ", self.inputfilenames[ide]
         ws.PlaySound(self.inputfilenames[ide], ws.SND_FILENAME)
         return
 
