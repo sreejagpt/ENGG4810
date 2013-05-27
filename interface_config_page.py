@@ -199,7 +199,8 @@ class EffectsEditor(wx.Panel):
             sdfile = open('I:\cf.cfg', 'w')
         
             cfgfile = open('config.cfg', 'r')
-        except IOError:
+        except IOError as e:
+            self.ShowMessage(str(e))
             return
         for line in cfgfile:
             sdfile.write(line)
@@ -258,7 +259,7 @@ class EffectsEditor(wx.Panel):
             try:
                 w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
             except Exception:
-                self.ShowMessage("Oh no!")
+                self.ShowMessage("Could not open config file")
             import serial
             ser = serial.Serial()
             ser.port=11

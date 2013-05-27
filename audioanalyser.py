@@ -1,4 +1,23 @@
-import pymedia
+import audiolab
+import scipy
+from pylab import *
+
+x, fs, nbits = audiolab.wavread('laser_resampled.wav')
+audiolab.play(x, fs)
+N = 4*fs    # four seconds of audio
+X = scipy.fft(x[:N])
+Xdb = 20*scipy.log10(scipy.absolute(X))
+f = scipy.linspace(0, fs, N, endpoint=False)
+pylab.plot(f, Xdb)
+pylab.xlim(0, 5000)   # view up to 5 kHz
+
+Y = X*H
+y = scipy.real(scipy.ifft(Y))
+
+
+
+
+"""import pymedia
 import time
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
@@ -32,6 +51,7 @@ print x, '\n',  y
 n, bins, patches = P.hist(x,y, histtype='bar')
 P.show()
 """
+"""
 for band in bands:
         x=[]
         y=[]
@@ -53,5 +73,6 @@ for band in bands:
         print '\n\n\n'
         time.sleep(2)
         break
+
 """
 
