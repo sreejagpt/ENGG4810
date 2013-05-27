@@ -112,14 +112,17 @@ def bitcrusher(filename, sound, crush):
 def echo(filename, delay, att, sound):
 
     outputsound = sound
+    delay = int(delay)
 
     largest = max(outputsound)
     smallest = min(outputsound)
     
     for p in range(delay+1, len(outputsound)):
         outputsound[p] = sound[p] + ((att* outputsound[p - delay]))
-        #if outputsound[p] > largest or outputsound[p] < smallest:
-         #   outputsound[p] = 0
+        if outputsound[p] == sys.maxint:
+            outputsound[p] = outputsound[p] - 1
+        elif outputsound[p] == -sys.maxint - 1:
+            outputsound[p] = outputsound[p] + 1
             
     newname = filename.split('.wav')[0]+'_echo.wav'
    
@@ -141,7 +144,7 @@ def echo(filename, delay, att, sound):
     return outputsound
 
 
-#applying echo to a file
+#applying delay to a file
 def delay(filename, delay, att, sound):
 
     outputsound = sound
@@ -151,11 +154,13 @@ def delay(filename, delay, att, sound):
    
     for p in range(delay+1, len(outputsound)):
         outputsound[p] = sound[p] + ((att * sound[p - delay]))
-        #if outputsound[p] > largest or outputsound[p] < smallest:
-         #   outputsound[p] = 0
+        if outputsound[p] == sys.maxint:
+            outputsound[p] = outputsound[p] - 1
+        elif outputsound[p] == -sys.maxint - 1:
+            outputsound[p] = outputsound[p] + 1
             
     
-    #now write echo to new file
+    #now write delay to new file
     newname = filename.split('.wav')[0]+'_delay.wav'
     spf = wave.open(newname, 'wb')
     #set nchannels, sampwidth, framerate, nframes, comptype, compname
@@ -170,9 +175,7 @@ def delay(filename, delay, att, sound):
     return outputsound
 
 
-
-
-    
+  
 if __name__ == '__main__':
     send_config_to_mpc()
     send_config_to_mpc()

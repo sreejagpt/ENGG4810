@@ -199,10 +199,10 @@ class PageOne(wx.Panel):
             f= open( name, 'rb' )
             snd= None
             s= " "
-            while len( s ):
+            while len(s):
                 s= f.read( 20000 )
                 if len( s ):
-                    frames= dm.parse( s )
+                    frames= dm.parse(s)
                     for fr in frames:
                         if dec== None:
                             # Open decoder
@@ -492,6 +492,10 @@ class PageOne(wx.Panel):
 
         self.start=int((self.start*len(sound))/100)
         self.stop=int((self.stop*len(sound))/100)
+
+        if self.start > self.stop:
+            self.ShowMessage("Invalid Values")
+            return
         
         sound=sound[self.start:self.stop+1]
         #plot new wav file

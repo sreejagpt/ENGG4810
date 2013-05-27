@@ -256,13 +256,12 @@ class SliceScreen(wx.Frame):
 
 
     def OnOK(self, e):
-        #Read text boxes and send over (alpha, delay)
+        #Read text boxes and send over (start, stop)
         self.start = self.start_textctrl.GetValue()
         self.stop = self.stop_textctrl.GetValue()
-        if self.start > self.stop:
-            return
-        msg = (self.start, self.stop)
         
+        msg = (self.start, self.stop)
+
         Publisher().sendMessage(("receive.sliceVals"), msg)
         self.Close()
 
