@@ -7,6 +7,7 @@ from wx.lib.pubsub import Publisher
 import interface_config_page as pg2 
 import read_wav as wav 
 import sys
+import serial_comms as sc
 
 import wave
 import button_assignment as ba

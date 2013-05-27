@@ -36,10 +36,7 @@ def show_wave_n_spec(filename):
     sound1 = spf.readframes(frames)
     sound1 = fromstring(sound1, 'Int16')
     spf.close()
-    
-    #echo('laser.wav', 30* (len(sound1)/50), 0.9997, sound) #this is my effects tester zone
-    #pitchshift(sound1, 1.8)
-    #lowpassfilter(sound1, 10000)
+
     return sound
     
 def convert_to_12_bit_unsigned(sound):
@@ -91,18 +88,13 @@ def plotter(sound):
     
 #bitcrusher
 def bitcrusher(filename, sound, crush):
+    if crush == 12:
+        return sound
+
     crush = crush % 12 # :D
     crush = crush + 1
     newname = filename.split('.wav')[0]+'_bitcrushed.wav'
     spf = wave.open(newname, 'wb')
-    #max_sound = max(sound)
-    
-    
-    #sound = sound & (131070/(2**crush))
-
-    #max_sound2 = max(sound)
-    
-    #sound = sound* round(max_sound/max_sound2)
 
     sound = sound << (12 - crush)
     
@@ -207,44 +199,14 @@ def test():
     ws.PlaySound('playme.wav', ws.SND_FILENAME)
 
 
-def send_to_mpc():
-    w = open('config.cfg','rb')
-    
-    import serial
-    ser = serial.Serial()
-    ser.port=12
-    ser.baudrate=115200
-    
-    ser.open()
-    ser.write("dummy\r\n")
-    ser.write("cf.cfgH\n")
-
-    import os
-    statinfo = os.stat('config.cfg')
-    
-    
-    ser.write("delay \n")
-    ser.write("echo     \n")
-    ser.write("32       \r\n")
-    ser.write("115\r\n")
-
-    ser.close()
-    w.close()  
-    """
-    import serial
-    ser = serial.Serial()
-    ser.port=12
-    ser.baudrate=115200
-    ser.open()
-    ser.write("dummy\r\n")
-    ser.write("01.wavH\n")
-    ser.write(sound1[0:511])
-    ser.write("\n")
-    ser.close()
-    """
 
 
     
 if __name__ == '__main__':
-    send_to_mpc()
+    send_config_to_mpc()
+    send_config_to_mpc()
+
+
+
+    send_wav_to_mpc()
     #show_wave_n_spec('sound3.wav')
