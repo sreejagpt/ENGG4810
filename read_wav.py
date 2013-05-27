@@ -53,7 +53,7 @@ def decimator(filename, sound, dec, crush):
     newname = filename.split('.wav')[0]+'_decimator.wav'
     spf = wave.open(newname, 'wb')
     outputsound = sound
-    
+    dec = int(dec)
     for i in range(0, (len(sound) - dec), dec):
         for j in range(i, i+dec):
             outputsound[j] = sound[i]
