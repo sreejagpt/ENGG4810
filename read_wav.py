@@ -170,35 +170,6 @@ def delay(filename, delay, att, sound):
     return outputsound
 
 
-"""
-Test function
-"""
-def test():
-
-    sound1 = show_wave_n_spec('beach.wav')
-    sound2 = show_wave_n_spec('laser.wav')
-    outputsound = sound1
-    print min(outputsound), max(outputsound)
-    print min(sound2), max(sound2)
-    for i in range(0, min(len(sound2), len(sound1))):
-        outputsound[i] = sound1[i]/2 + sound2[i]/2
-
-    newname = 'playme.wav'
-    print min(outputsound), max(outputsound)
-    #now write echo to new file
-    spf = wave.open(newname, 'wb')
-    #set nchannels, sampwidth, framerate, nframes, comptype, compname
-    spf.setnchannels(1)
-    spf.setsampwidth(2)
-    spf.setframerate(44100)
-    
-    spf.setnframes(len(outputsound))
-    spf.writeframes(outputsound.tostring())
-    spf.close() #close echo file
-
-    ws.PlaySound('playme.wav', ws.SND_FILENAME)
-
-
 
 
     

@@ -193,7 +193,7 @@ class EffectsEditor(wx.Panel):
         self.BuildFile(e)
         #saves to SD card
         try:
-            sdfile = open('I:\config.cfg', 'w')
+            sdfile = open('I:\cf.cfg', 'w')
         
             cfgfile = open('config.cfg', 'r')
         except IOError:
@@ -202,6 +202,8 @@ class EffectsEditor(wx.Panel):
             sdfile.write(line)
         cfgfile.close()
         sdfile.close()
+
+        self.ShowMessage("Sent Config File to SD Card")
         
 
         return
@@ -219,16 +221,89 @@ class EffectsEditor(wx.Panel):
         
 
         f = open('config.cfg', 'w')
-        f.write('slot1 '+slot1_enc+'\n')
-        f.write('slot2 '+slot2_enc+'\n')
-        f.write('loop '+loop_enc+'\n')
-        f.write('tempo '+tempo+'\n')
+        f.write(slot1_enc+'\r\n')
+        f.write(slot2_enc+'\r\n')
+        f.write(loop_enc+'\r\n')
+        f.write(tempo+'\r\n')
         f.close()
         return
 
+
+    def send_dummy_to_mpc(self):
+
+        import serial
+        ser = serial.Serial()
+        ser.port=11
+        ser.baudrate=115200
+        
+        ser.open()
+
+        #ser.flush()
+        ser.write("dummyH\n")
+
+        ack=ser.readline()
+
+        ser.write("dummyH\n")
+        
+        ack=ser.readline()
+        #print ack
+        
+        ser.close()
+
+    def send_config_to_mpc(self):
+            try:
+                w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
+            except Exception:
+                self.ShowMessage("Oh no!")
+            import serial
+            ser = serial.Serial()
+            ser.port=11
+            ser.baudrate=115200
+            
+            ser.open()
+
+            ser.write("cf.cfgH\n")
+            ack=ser.readline()
+            time.sleep(0.05)
+            #print ack
+            import os
+            statinfo = os.stat('C:\\Python27\\ENGG4810\\config.cfg')
+
+            ack='blah '
+
+            ser.write(str(statinfo.st_size)+'\n')
+            i=0
+            while ack.strip() != str(statinfo.st_size):
+                ack=ser.readline()
+                print "Size Ack: ", ack
+                i=i+1
+                if i==5:
+                    self.ShowMessage('Serial Communications Timeout')
+                    return
+
+            buff=''
+            for line in w:
+                buff = buff+line
+            ser.write(buff)
+            ack=ser.readline()
+            #print ack
+            ser.close()
+            w.close()
+
+
+    def ShowMessage(self, message):
+        wx.MessageBox(message, 'Message', 
+            wx.OK | wx.ICON_INFORMATION)
+
     def OnExportUSB(self, e):
         self.BuildFile(e)
-        #start serial comms
+        time.sleep(1)
+        self.send_dummy_to_mpc()
+        time.sleep(0.05)
+        self.send_config_to_mpc()
+        time.sleep(0.05)
+        self.send_config_to_mpc()
+        self.ShowMessage('Config File Exported to MPC')
         return
 
 

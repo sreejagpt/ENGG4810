@@ -7,19 +7,21 @@ from wx.lib.pubsub import Publisher
 import interface_config_page as pg2 
 import read_wav as wav 
 import sys
-import serial_comms as sc
 
 import wave
 import button_assignment as ba
 import effects_screens as effs
 import winsound as ws
+import time
 
 class PageOne(wx.Panel):
     #Effects screen
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        self.dirname='C:\Python27\ENGG4810'
+        self.dirname='C:\\Python27\\ENGG4810'
         self.EffectId = -1
+        self.firstserialtx = 1
+        self.SDExport = 0
         self.currentid = -1
         self.holdlatchmode = 'hold'
         self.frame = parent
@@ -57,7 +59,7 @@ class PageOne(wx.Panel):
             panel = wx.Panel(self)
             self.panels.append(panel)
             #create canvas 
-            fig = Figure(None, facecolor="grey")
+            fig = Figure(None, facecolor="black")
             self.figures[i] = fig
             canv = FigureCanvas(self.panels[i], -1, self.figures[i])
             self.canvs.append(canv)
@@ -160,7 +162,11 @@ class PageOne(wx.Panel):
             if self.filename.split(".")[1] == "mp3":
                 self.convert_mp3_to_wav(self.filename)
                 self.filename=self.filename.split(".mp3")[0]+".wav"
-            sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
+                try:
+                    sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
+                except Exception as e:
+                    self.ShowMessage(e)
+                    return
             ide = (e.GetId())%10
             #now we have the sound file!!
             #add it to our 'pure' sound collection
@@ -172,7 +178,7 @@ class PageOne(wx.Panel):
             #clear axes first
             self.axes.clear()
             
-            self.axes.plot(sound, "-b")
+            self.axes.plot(sound, "-y")
             self.axes.set_axis_off()
             self.axes.set_ybound(lower = min(sound), upper = max(sound))
             self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -212,18 +218,158 @@ class PageOne(wx.Panel):
                                 snd.setparams( (r.channels, 2, r.sample_rate, 0, 'NONE','') )
                             
                             snd.writeframes( r.data )
+                            
+    def send_wav_to_mpc(self, filename, button, holdlatch):
+        if int(button) < 10:
+            button = '0'+str(button)
+
+        
+        import os
+        statinfo = os.stat(str(filename))
+        
+        import serial
+        ser = serial.Serial()
+        ser.port=11
+        ser.baudrate=115200
+        ser.open()
+        
+        ser.write(str(button)+".wav"+str(holdlatch)+"\n")
+        ser.flush()
+        ack=ser.readline()
+
+
+        ser.write(str(statinfo.st_size)+'\n')
+        ser.flush()
+        ack=ser.readline()
+
+
+        ser.write(str(statinfo.st_size)+'\n')
+        ack=ser.readline()
+
+        """
+        w = open(filename,'rb')
+        buff=''
+        i=0
+        #print 'Starting while loop'
+        try:
+            byte = w.read(1)
+            
+            while i < statinfo.st_size:
+                # Send byte
+                buff=buff+byte
+                if len(buff) == 1024 or i == (statinfo.st_size - 1):
+                    ack=ser.write(buff)
+                    buff=''
+                    #print (100*(statinfo.st_size - i)/statinfo.st_size), "% remaining"
+                    
+                i=i+1
+                byte = w.read(1)
+        finally:
+            w.close()
+        """
+        ser.close()
+        return
+
+    def send_dummy_to_mpc(self):
+
+        import serial
+        ser = serial.Serial()
+        ser.port=11
+        ser.baudrate=115200
+        
+        ser.open()
+
+        #ser.flush()
+        ser.write("dummyH\n")
+        ser.flush()
+        ack=ser.readline()
+        
+        
+        ser.close()
+
+
+    def send_config_to_mpc(self):
+        try:
+            w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
+        except Exception:
+            self.ShowMessage("Oh no!")
+        import serial
+        ser = serial.Serial()
+        ser.port=11
+        ser.baudrate=115200
+        
+        ser.open()
+
+        #ser.flush()
+        ser.write("cf.cfgH\n")
+        ack=ser.readline()
+        
+        import os
+        statinfo = os.stat('C:\\Python27\\ENGG4810\\config.cfg')
+
+        ser.write(str(statinfo.st_size)+'\n')
+        
+        ack=ser.readline()
+        buff=''
+        for line in w:
+            buff = buff+line
+        ser.write(buff)
+        ack=ser.readline()
+        ser.close()
+        w.close()
+
 
     def showFrame(self, msg):
         self.buttonpressed = msg.data[0]
         self.holdlatchmode = msg.data[1]
+        to=None
+        fro=None
         #Assigning sound to keypad key
         if self.buttonpressed != -1:
             sound = self.inputsounds[self.currentid]
             filename = self.inputfilenames[self.currentid]
             self.buttonassignments[self.buttonpressed] = (self.holdlatchmode, filename)
             Publisher().sendMessage(("update.assignments"), self.buttonassignments)
+            
+            if sound != None and self.SDExport == 1 and self.buttonpressed != -1:
+                #Save to SD
+                self.SDExport = 0
+                try:
+                    filename = str(self.buttonpressed)+".wav"
+                    to = open("I:\\"+filename, 'wb')
+                    fro = open(self.inputfilenames[self.currentid], 'rb')
+                    
+                    for line in fro:
+                        to.write(line)
+                except IOError as e:
+                    self.ShowMessage(str(e))
+                to.close()
+                fro.close()
+                self.ShowMessage('Wrote File to SD Card')
+            if sound != None and self.SDExport == 0 and self.buttonpressed != -1:
+                #Send over USB
+                try:
+                    filename='C:\\Python27\\ENGG4810\\'+self.inputfilenames[self.currentid]
+                    if self.firstserialtx == 1:
+                        self.send_dummy_to_mpc()
+                        #self.firstserialtx = 0
+                        #self.send_config_to_mpc()
+                        #self.send_config_to_mpc()
+                    
+                        self.send_wav_to_mpc(filename, (self.buttonpressed + 1), self.holdlatchmode[0].upper())
+                except Exception as e:
+                    self.ShowMessage(str(e))
+                    frame = self.GetParent()
+                    frame.Show()
+                    return
+                self.ShowMessage('File Sent To MPC')         
         frame = self.GetParent()
         frame.Show()
+
+
+    def ShowMessage(self, message):
+        wx.MessageBox(message, 'Message', 
+            wx.OK | wx.ICON_INFORMATION)
 
     def decBitTime(self, msg):
         #extract values from message
@@ -243,7 +389,7 @@ class PageOne(wx.Panel):
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
         self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_bitcrushed.wav'
-        self.axes.plot(sound, "-b")
+        self.axes.plot(sound, "-y")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -268,7 +414,7 @@ class PageOne(wx.Panel):
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
         self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_delay.wav'
-        self.axes.plot(sound, "-b")
+        self.axes.plot(sound, "-y")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -294,7 +440,7 @@ class PageOne(wx.Panel):
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
         self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_echo.wav'
-        self.axes.plot(sound, "-b")
+        self.axes.plot(sound, "-y")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -317,7 +463,7 @@ class PageOne(wx.Panel):
         self.axes.clear()
         self.inputsounds[self.EffectId] = sound
         self.inputfilenames[self.EffectId] = self.inputfilenames[self.EffectId].split('.wav')[0]+'_pitchshift.wav'
-        self.axes.plot(sound, "-b")
+        self.axes.plot(sound, "-y")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -327,7 +473,6 @@ class PageOne(wx.Panel):
     def sliceTime(self, msg):
         self.start=int(msg.data[0])
         self.stop=int(msg.data[1])
-        print "Slicing "+self.inputfilenames[self.EffectId]
         sound=self.inputsounds[self.EffectId]
 
         self.start=int((self.start*len(sound))/100)
@@ -339,7 +484,7 @@ class PageOne(wx.Panel):
         #clear axes first
         self.axes.clear()
           
-        self.axes.plot(sound, "-b")
+        self.axes.plot(sound, "-y")
         self.axes.set_axis_off()
         self.axes.set_ybound(lower = min(sound), upper = max(sound))
         self.axes.set_xbound(lower = 0, upper = len(sound))
@@ -414,11 +559,11 @@ class PageOne(wx.Panel):
         self.currentid = (e.GetId())%70
         self.new_frame = ba.ButtonAssignment()
         self.new_frame.Show()
+        self.SDExport = 1
 
     def OnPlay(self, e):
         ide = (e.GetId()) % 80
         #now play the file
-        print "Play ", self.inputfilenames[ide]
         ws.PlaySound(self.inputfilenames[ide], ws.SND_FILENAME)
         return
 
