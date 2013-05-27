@@ -162,11 +162,8 @@ class PageOne(wx.Panel):
             if self.filename.split(".")[1] == "mp3":
                 self.convert_mp3_to_wav(self.filename)
                 self.filename=self.filename.split(".mp3")[0]+".wav"
-                try:
-                    sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
-                except Exception as e:
-                    self.ShowMessage(e)
-                    return
+            sound = wav.show_wave_n_spec(self.dirname+"\\"+self.filename)
+                
             ide = (e.GetId())%10
             #now we have the sound file!!
             #add it to our 'pure' sound collection
@@ -232,21 +229,26 @@ class PageOne(wx.Panel):
         ser.port=11
         ser.baudrate=115200
         ser.open()
-        
-        ser.write(str(button)+".wav"+str(holdlatch)+"\n")
-        ser.flush()
-        ack=ser.readline()
+        ack = 'blah '
+        i = 0
+        while ack.strip()!=(str(button)+".wav"+str(holdlatch)).strip():
+            ser.write(str(button)+".wav"+str(holdlatch)+"\n")
+            ack=ser.readline()
+            i=i+1
+            if i == 5:
+                self.ShowMessage("Serial Timeout")
+                return
+        time.sleep(0.05)
+        ack = 'blah '
+        i=0
+        while ack.strip() != str(statinfo.st_size):
+            ser.write(str(statinfo.st_size)+'\n')
+            ack=ser.readline()
+            i=i+1
+            if i == 5:
+                self.ShowMessage("Serial Timeout")
+                return
 
-
-        ser.write(str(statinfo.st_size)+'\n')
-        ser.flush()
-        ack=ser.readline()
-
-
-        ser.write(str(statinfo.st_size)+'\n')
-        ack=ser.readline()
-
-        """
         w = open(filename,'rb')
         buff=''
         i=0
@@ -266,7 +268,7 @@ class PageOne(wx.Panel):
                 byte = w.read(1)
         finally:
             w.close()
-        """
+        
         ser.close()
         return
 
@@ -281,7 +283,10 @@ class PageOne(wx.Panel):
 
         #ser.flush()
         ser.write("dummyH\n")
-        ser.flush()
+        ack=ser.readline()
+
+        ser.write("dummyH\n")
+        
         ack=ser.readline()
         
         
@@ -289,34 +294,44 @@ class PageOne(wx.Panel):
 
 
     def send_config_to_mpc(self):
-        try:
-            w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
-        except Exception:
-            self.ShowMessage("Oh no!")
-        import serial
-        ser = serial.Serial()
-        ser.port=11
-        ser.baudrate=115200
-        
-        ser.open()
+            try:
+                w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
+            except Exception:
+                self.ShowMessage("Oh no!")
+            import serial
+            ser = serial.Serial()
+            ser.port=11
+            ser.baudrate=115200
+            
+            ser.open()
 
-        #ser.flush()
-        ser.write("cf.cfgH\n")
-        ack=ser.readline()
-        
-        import os
-        statinfo = os.stat('C:\\Python27\\ENGG4810\\config.cfg')
+            ser.write("cf.cfgH\n")
+            ack=ser.readline()
+            time.sleep(0.05)
+            #print ack
+            import os
+            statinfo = os.stat('C:\\Python27\\ENGG4810\\config.cfg')
 
-        ser.write(str(statinfo.st_size)+'\n')
-        
-        ack=ser.readline()
-        buff=''
-        for line in w:
-            buff = buff+line
-        ser.write(buff)
-        ack=ser.readline()
-        ser.close()
-        w.close()
+            ack='blah '
+
+            ser.write(str(statinfo.st_size)+'\n')
+            i=0
+            while ack.strip() != str(statinfo.st_size):
+                ack=ser.readline()
+                print "Size Ack: ", ack
+                i=i+1
+                if i==5:
+                    self.ShowMessage('Serial Communications Timeout')
+                    return
+
+            buff=''
+            for line in w:
+                buff = buff+line
+            ser.write(buff)
+            ack=ser.readline()
+            #print ack
+            ser.close()
+            w.close()
 
 
     def showFrame(self, msg):

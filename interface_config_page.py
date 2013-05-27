@@ -249,6 +249,7 @@ class EffectsEditor(wx.Panel):
         ser.write("dummyH\n")
         
         ack=ser.readline()
+        
         #print ack
         
         ser.close()
