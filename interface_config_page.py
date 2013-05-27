@@ -29,7 +29,7 @@ class PageTwo(wx.Panel):
         #add information square to horiz layout
         self.info_panel = wx.Panel(self.panel)
         self.txt = wx.StaticText(self.info_panel, label =
-                            "Hover over a button to view information.\n Click on a button to play sound")
+                            "Hover over a button to view information.\n")
         self.masterHSizer.Add(self.info_panel, 1, wx.ALIGN_CENTER|wx.EXPAND|wx.ALL, 20)
 
 
@@ -65,7 +65,7 @@ class PageTwo(wx.Panel):
         self.txt.SetLabel('Hover over button to view filename\nassigned to it')
         buttonid = event.GetId()
         if self.buttonassignments[buttonid][1] != None:
-            self.txt.SetLabel("Button "+str(buttonid + 1)+" stores file "+self.buttonassignments[buttonid][1]\
+            self.txt.SetLabel("Button "+str(buttonid + 1)+" stores file \n"+self.buttonassignments[buttonid][1]\
                 +"\nMode: "+self.buttonassignments[buttonid][0])
         time.sleep(0.05)
         event.Skip()
@@ -74,7 +74,7 @@ class PageTwo(wx.Panel):
     def onMouseLeave(self, event):
         # mouse not over button, back to original text
     
-        self.txt.SetLabel("Hover over a button to view information.\n Click on a button to play sound")
+        self.txt.SetLabel("Hover over a button to view information.\n")
         event.Skip()
 
 
@@ -249,7 +249,7 @@ class EffectsEditor(wx.Panel):
         ser.write("dummyH\n")
         
         ack=ser.readline()
-        
+
         #print ack
         
         ser.close()
@@ -279,7 +279,7 @@ class EffectsEditor(wx.Panel):
             i=0
             while ack.strip() != str(statinfo.st_size):
                 ack=ser.readline()
-                print "Size Ack: ", ack
+                #print "Size Ack: ", ack
                 i=i+1
                 if i==5:
                     self.ShowMessage('Serial Communications Timeout')

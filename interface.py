@@ -13,6 +13,7 @@ import button_assignment as ba
 import effects_screens as effs
 import winsound as ws
 import time
+from threading import Thread
 
 class PageOne(wx.Panel):
     #Effects screen
@@ -42,6 +43,7 @@ class PageOne(wx.Panel):
         self.exButtons = [] #export via serial
         self.exButtons_SD = [] #export via SD
         self.buttonPanels = []
+        self.timeout = 0
         
 
         Publisher().subscribe(self.showFrame, ("show.mainframe"))
@@ -149,7 +151,6 @@ class PageOne(wx.Panel):
             self.masterVSizer.Add(self.panels[i], 1, wx.EXPAND | wx.ALL, 4)
 
         self.SetSizerAndFit(self.masterVSizer)
-
     
 
    
@@ -181,8 +182,7 @@ class PageOne(wx.Panel):
             self.axes.set_xbound(lower = 0, upper = len(sound))
             
             self.canvs[ide] = FigureCanvas(self.panels[ide], -1, self.figures[ide])
-            
-            
+  
         dlg.Destroy()
 
     def convert_mp3_to_wav( self, name ):
@@ -235,8 +235,10 @@ class PageOne(wx.Panel):
             ser.write(str(button)+".wav"+str(holdlatch)+"\n")
             ack=ser.readline()
             i=i+1
+            #print ack
             if i == 5:
                 self.ShowMessage("Serial Timeout")
+                self.timeout = 1
                 return
         time.sleep(0.05)
         ack = 'blah '
@@ -245,8 +247,10 @@ class PageOne(wx.Panel):
             ser.write(str(statinfo.st_size)+'\n')
             ack=ser.readline()
             i=i+1
+            #print ack
             if i == 5:
                 self.ShowMessage("Serial Timeout")
+                self.timeout = 1
                 return
 
         w = open(filename,'rb')
@@ -288,8 +292,7 @@ class PageOne(wx.Panel):
         ser.write("dummyH\n")
         
         ack=ser.readline()
-        
-        
+
         ser.close()
 
 
@@ -297,7 +300,7 @@ class PageOne(wx.Panel):
             try:
                 w = open('C:\\Python27\\ENGG4810\\config.cfg','rb')
             except Exception:
-                self.ShowMessage("Oh no!")
+                self.ShowMessage("Could not find config file")
             import serial
             ser = serial.Serial()
             ser.port=11
@@ -318,7 +321,7 @@ class PageOne(wx.Panel):
             i=0
             while ack.strip() != str(statinfo.st_size):
                 ack=ser.readline()
-                print "Size Ack: ", ack
+                #print "Size Ack: ", ack
                 i=i+1
                 if i==5:
                     self.ShowMessage('Serial Communications Timeout')
@@ -366,6 +369,7 @@ class PageOne(wx.Panel):
                 try:
                     filename='C:\\Python27\\ENGG4810\\'+self.inputfilenames[self.currentid]
                     if self.firstserialtx == 1:
+                        self.timeout = 0
                         self.send_dummy_to_mpc()
                         #self.firstserialtx = 0
                         #self.send_config_to_mpc()
@@ -377,7 +381,8 @@ class PageOne(wx.Panel):
                     frame = self.GetParent()
                     frame.Show()
                     return
-                self.ShowMessage('File Sent To MPC')         
+                if self.timeout == 0:
+                    self.ShowMessage('File Sent To MPC')        
         frame = self.GetParent()
         frame.Show()
 
@@ -584,10 +589,9 @@ class PageOne(wx.Panel):
         ide = (e.GetId()) % 80
         #now play the file
         ws.PlaySound(self.inputfilenames[ide], ws.SND_FILENAME)
-        return
 
-
-
+    def PlaySound(filename_arg, *args):
+         ws.PlaySound(filename_arg, ws.SND_FILENAME)
 
 class MainFrame(wx.Frame):
     def __init__(self):
