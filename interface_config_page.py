@@ -164,27 +164,30 @@ class EffectsEditor(wx.Panel):
 
     def OnImportSD(self, e):
         #Read file from location
-        self.dirname='C:\Python27\ENGG4810' #TODO change this to SD card drive
+        self.dirname='I:' #TODO change this to SD card drive
         dlg = wx.FileDialog(self, "Choose a Config File", self.dirname, "", "*.cfg", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
             self.file=open(self.dirname+"\\"+self.filename, 'r')
             #Go through file line by line and parse it
+            i=0
             for line in self.file:
-                strip = line.split(' ', 1)
-
-                try:
-                    self.vals[strip[0].strip()] = strip[1].strip()
-                except KeyError:
-                    pass
+                strip = line.strip()
+                if i == 0:
+                    self.slot1_combobox.SetLabel(self.decode[strip])
+                elif i == 1:
+                    self.slot2_combobox.SetLabel(self.decode[strip])
+                elif i == 2:
+                    self.loop_combobox.SetLabel(self.decode[strip])
+                else:
+                    self.tempo_textctrl.SetLabel(strip)
+                i=i+1
+                #try:
+                    #self.vals[strip[0].strip()] = strip[1].strip()
+                #except KeyError:
+                    #pass
             #we now have our config file parsed in
-            
-            #Reset working values by setting the fields to them
-            self.slot1_combobox.SetLabel(self.decode[self.vals['slot1']])
-            self.slot2_combobox.SetLabel(self.decode[self.vals['slot2']])
-            self.loop_combobox.SetLabel(self.decode[self.vals['loop']])
-            self.tempo_textctrl.SetLabel(self.vals['tempo'])
 
     def OnImportUSB(self, e):
         return #TODO
